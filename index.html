@@ -1,0 +1,2440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>KT Garment Order Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
+:root{
+  --navy:#1A2744;--teal:#0D7C66;--teal-lt:#E6F4F1;
+  --gold:#F5A623;--red:#C0392B;--red-lt:#FFF0F0;
+  --blue:#2980B9;--purple:#7D3C98;--green:#1E8449;--green-lt:#EAFAF1;
+  --bg:#F0F3F8;--card:#fff;--border:#D0D5DD;--muted:#6B7280;--text:#1A2744;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);}
+/* HEADER */
+.hdr{background:var(--navy);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;}
+.hdr-brand{display:flex;align-items:center;gap:12px;}
+.hdr-logo{width:38px;height:38px;background:var(--teal);border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px;}
+.hdr-title{color:#fff;font-size:15px;font-weight:700;}
+.hdr-sub{color:#8BA3C7;font-size:11px;}
+.hdr-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.hbtn{border:none;padding:6px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;}
+.badge{background:var(--teal);color:#fff;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;}
+/* TABS */
+.tabs{background:var(--navy);padding:0 24px;display:flex;gap:2px;border-top:1px solid #2A3754;}
+.tab{padding:10px 20px;border:none;cursor:pointer;font-size:12px;font-weight:600;border-radius:8px 8px 0 0;color:#8BA3C7;background:transparent;font-family:'Inter',sans-serif;}
+.tab.on{background:var(--teal);color:#fff;}
+/* LOADING */
+
+/* PANELS */
+.panel{display:none;padding:20px 24px;}
+.panel.on{display:block;}
+/* CARD */
+.card{background:var(--card);border-radius:14px;box-shadow:0 1px 6px rgba(0,0,0,.08);overflow:hidden;margin-bottom:16px;}
+.card-hdr{background:var(--navy);color:#fff;padding:12px 20px;font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center;}
+.card-body{padding:18px;display:flex;flex-direction:column;gap:14px;}
+/* FIELDS */
+.fld{display:flex;flex-direction:column;gap:5px;}
+.fld label{font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;}
+.fld input,.fld select{background:#FAFBFF;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;font-family:'Inter',sans-serif;color:var(--text);width:100%;}
+.fld input:focus,.fld select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(13,124,102,.1);}
+.fld input[readonly]{background:#FFFDE7;border-color:#F5E642;font-weight:600;cursor:not-allowed;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.r4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+/* BUTTONS */
+.btn{padding:10px 20px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:6px;}
+.btn-teal{background:var(--teal);color:#fff;}
+.btn-navy{background:var(--navy);color:#fff;}
+.btn-orange{background:#E67E22;color:#fff;}
+.btn-red{background:var(--red-lt);color:var(--red);border:1.5px solid var(--red);}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;padding:14px 18px;border-top:1px solid var(--border);}
+/* DESIGN ROW */
+.dr{border-radius:14px;overflow:hidden;margin-bottom:14px;}
+.dr-hdr{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;}
+.dr-hdr-left{display:flex;align-items:center;gap:10px;}
+.dr-num{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:13px;}
+.dr-label{font-size:13px;font-weight:700;color:#fff;}
+.dr-fields{padding:14px;display:flex;flex-direction:column;gap:12px;background:#fff;}
+.dr-top{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;}
+/* COLOUR SECTION */
+.clr-sec{border-radius:10px;padding:10px;margin-bottom:8px;}
+.clr-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.clr-badge{border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700;color:#fff;}
+/* SIZE GRID */
+.sz-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;}
+.sz{display:flex;flex-direction:column;gap:4px;}
+.sz-lbl{font-size:9px;font-weight:700;text-align:center;color:var(--navy);line-height:1.4;}
+.sz-lbl span{color:var(--muted);}
+.sz input{text-align:center;padding:7px 4px;font-size:12px;font-weight:600;}
+/* IMAGE UPLOAD */
+.img-box{border:2px dashed var(--border);border-radius:8px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;}
+.img-box img{width:28px;height:28px;object-fit:cover;border-radius:4px;}
+/* SUMMARY */
+.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.sum-card{border-radius:12px;padding:12px;text-align:center;}
+.sum-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+.sum-val{font-size:22px;font-weight:800;color:var(--navy);}
+/* DASHBOARD */
+.filters{background:#fff;border-radius:10px;padding:10px 16px;margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.fg{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+.fg select,.fg input{border:1.5px solid var(--border);border-radius:7px;padding:7px 10px;font-size:12px;font-family:'Inter',sans-serif;background:#FAFBFF;}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px;}
+.kpi{background:#fff;border-radius:8px;padding:7px 12px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:4px solid transparent;}
+.kpi-lbl{font-size:9px;font-weight:600;color:var(--muted);text-transform:uppercase;margin-bottom:2px;letter-spacing:.3px;}
+.kpi-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--navy);}
+.kpi-sub{font-size:9px;color:var(--muted);margin-top:2px;}
+/* DEPT TABLE */
+.dept-table{width:100%;border-collapse:collapse;font-size:12px;border:2px solid #000;}
+.dept-table th{background:var(--navy);color:#fff;padding:9px 14px;text-align:center;font-weight:700;font-size:11px;border:1.5px solid #000;}
+.dept-table td{padding:8px 14px;border:1.5px solid #000;text-align:center;}
+.dept-table tr:nth-child(even){background:#F8FAFC;}
+.dept-table tr.total-row{background:var(--teal-lt);font-weight:700;border-top:2px solid var(--teal);}
+/* CHARTS */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.chart-card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.chart-card.wide{grid-column:span 2;}
+.chart-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:14px;}
+.chart-wrap{position:relative;height:220px;}
+/* ALL ORDERS TABLE */
+.tbl-wrap{overflow:auto;max-height:500px;}
+table{width:100%;border-collapse:collapse;font-size:11px;min-width:800px;}
+thead th{background:var(--navy);color:#fff;padding:9px 12px;text-align:left;font-weight:600;font-size:10px;white-space:nowrap;position:sticky;top:0;z-index:1;}
+tbody tr{border-bottom:1px solid #EEF1F6;cursor:pointer;transition:background .1s;}
+tbody tr:nth-child(even){background:#F8FAFC;}
+tbody tr:hover{background:var(--teal-lt);}
+tbody td{padding:9px 12px;font-size:11px;white-space:nowrap;}
+td.num{text-align:right;font-family:'JetBrains Mono',monospace;}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;}
+.tag-green{background:var(--green-lt);color:var(--green);}
+.tag-gold{background:#FEF3DC;color:#9A6B0A;}
+.tag-red{background:var(--red-lt);color:var(--red);}
+.prog{width:60px;height:7px;background:#EEF1F6;border-radius:4px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:4px;}
+.prog-fill{height:100%;border-radius:4px;}
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--teal);color:#fff;padding:12px 24px;border-radius:24px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);transition:transform .3s;z-index:9999;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+.toast.err{background:var(--red);}
+.empty{padding:50px;text-align:center;color:var(--muted);font-size:13px;}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;}
+.modal{background:#fff;border-radius:14px;padding:24px;width:380px;box-shadow:0 8px 40px rgba(0,0,0,.25);}
+@media(max-width:700px){.kpi-grid{grid-template-columns:repeat(2,1fr);} .charts-grid{grid-column:1;grid-template-columns:1fr;} .chart-card.wide{grid-column:1;} .sz-grid{grid-template-columns:repeat(4,1fr);}}
+</style>
+</head>
+<body>
+<div id="loadBar" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+  <div style="width:60px;height:60px;border:6px solid rgba(255,255,255,.3);border-top:6px solid #fff;border-radius:50%;animation:spin .8s linear infinite;"></div>
+  <div style="color:#fff;font-size:14px;font-weight:700;letter-spacing:1px;">SAVING...</div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">KT</div>
+    <div><div class="hdr-title">Garment Order Tracking</div><div class="hdr-sub">Kids Talk</div></div>
+  </div>
+  <div class="hdr-right">
+    <label class="hbtn" style="background:var(--gold);color:var(--navy);">📂 Load Backup<input type="file" accept=".json" onchange="importJSON(event)" style="display:none;"></label>
+    <button class="hbtn" style="background:var(--teal);color:#fff;" onclick="exportJSON()">💾 Backup</button>
+    <button class="hbtn" style="background:var(--blue);color:#fff;" onclick="embedDownload()">⬇ Download</button>
+    <span class="badge" id="totalBadge">0 Orders</span>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab on" id="t0" onclick="goTab(0)">📦 Order Entry</button>
+  <button class="tab" id="t1" onclick="goTab(1)">📥 Receipt Entry</button>
+  <button class="tab" id="t2" onclick="goTab(2)">📊 Dashboard</button>
+  <button class="tab" id="t3" onclick="goTab(3)">📋 All Orders</button>
+  <button class="tab" id="t4" onclick="goTab(4)">&#128101; Suppliers</button>
+  <button class="tab" id="t5" onclick="goTab(5)">&#9881;&#65039; Settings</button>
+</div>
+
+<!-- ORDER ENTRY -->
+<div class="panel on" id="p0">
+  <div class="card">
+    <div class="card-hdr" id="oFormTitle" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>&#128230; New Order</span>
+      <div style="display:flex;gap:8px;">
+        <button onclick="downloadSampleFormat()" style="background:#1E8449;color:#fff;border:none;padding:5px 14px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">
+          &#128196; Sample Format
+        </button>
+        <label style="background:var(--gold);color:var(--navy);padding:5px 14px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
+          &#128229; Import Excel
+          <input type="file" accept=".xlsx,.xls,.csv,.txt,.tsv" onchange="importExcelFile(event)" style="display:none;">
+        </label>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="r3">
+        <div class="fld">
+          <label>Supplier *</label>
+          <div style="display:flex;gap:6px;">
+            <select id="o_sup" style="flex:1;"></select>
+            <button onclick="openSupMod()" style="width:32px;border:1.5px solid var(--teal);background:var(--teal-lt);color:var(--teal);border-radius:8px;font-size:18px;cursor:pointer;font-weight:700;">+</button>
+          </div>
+        </div>
+        <div class="fld"><label>Order Date *</label><input type="date" id="o_date"></div>
+        <div class="fld"><label>Expected Receipt *</label><input type="date" id="o_exp"></div>
+      </div>
+    </div>
+  </div>
+  <div id="drContainer"></div>
+  <div class="card">
+    <div class="card-hdr">📊 Order Summary</div>
+    <div class="card-body">
+      <div class="sum-grid">
+        <div class="sum-card" style="background:var(--teal-lt);"><div class="sum-label">Designs</div><div class="sum-val" id="s_designs">0</div></div>
+        <div class="sum-card" style="background:var(--teal-lt);"><div class="sum-label">Total Qty</div><div class="sum-val" id="s_qty">0</div></div>
+        <div class="sum-card" style="background:#FFFDE7;"><div class="sum-label">Cost Value</div><div class="sum-val" id="s_cost">₹0</div></div>
+        <div class="sum-card" style="background:#EBF5FB;"><div class="sum-label">MRP Value</div><div class="sum-val" id="s_mrp">₹0</div></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-teal" id="mainBtn" onclick="mainSave()">📦 Save All Orders</button>
+      <button class="btn btn-navy" onclick="addDR()">➕ Add Design</button>
+      <button class="btn btn-red" onclick="cancelOrder()">✕ Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPT ENTRY -->
+<div class="panel" id="p1">
+  <!-- Top: Supplier + Date -->
+  <div class="card">
+    <div class="card-hdr">&#128229; Receipt Entry</div>
+    <div class="card-body">
+      <div class="r3">
+        <div class="fld"><label>Supplier</label><select id="r_sup" onchange="filterDesigns()"><option value="">-- All Suppliers --</option></select></div>
+        <div class="fld"><label>Receipt Date *</label><input type="date" id="r_date" onchange="calcDelay()"></div>
+        <div class="fld"><label>Bill Number *</label><input type="text" id="r_bill" placeholder="INV-001"></div>
+      </div>
+      <div class="r2">
+        <div class="fld"><label>Bill Date *</label><input type="date" id="r_bdate"></div>
+        <div class="fld"><label>Delay Days</label><input type="text" id="r_delay" readonly></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Design rows (same as Order Entry) -->
+  <div id="r_designsContainer"></div>
+
+  <!-- Totals -->
+  <div class="card">
+    <div class="card-hdr">&#128202; Receipt Summary</div>
+    <div class="card-body">
+      <div class="r4">
+        <div class="sum-card" style="background:var(--teal-lt);"><div class="sum-label">Total Received</div><div class="sum-val" id="r_tot">0</div></div>
+        <div class="sum-card" style="background:#FFFDE7;"><div class="sum-label">Total Ordered</div><div class="sum-val" id="r_ordtot">0</div></div>
+        <div class="sum-card" style="background:var(--red-lt);"><div class="sum-label">Pending</div><div class="sum-val" id="r_pend">0</div></div>
+        <div class="sum-card" style="background:#EBF5FB;"><div class="sum-label">Recv %</div><div class="sum-val" id="r_recvpct">0%</div></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-teal" onclick="saveReceipt()">&#128229; Save Receipt</button>
+      <button class="btn btn-red" onclick="clearReceipt()">&#128465; Clear</button>
+    </div>
+  </div>
+</div>
+<!-- DASHBOARD -->
+<div class="panel" id="p2">
+  <div class="filters">
+    <div class="fg">Supplier<select id="f_sup" onchange="renderDash()"><option value="">All</option></select></div>
+    <div class="fg">Status<select id="f_st" onchange="renderDash()"><option value="">All</option><option>Completed</option><option>Partial</option><option>Pending</option></select></div>
+    <div class="fg">Dept<select id="f_dept" onchange="renderDash()"><option value="">All</option><option>Boys</option><option>Girls</option><option>Boys & Girls</option></select></div>
+    <div class="fg">From<input type="date" id="f_from" onchange="renderDash()"></div>
+    <div class="fg">To<input type="date" id="f_to" onchange="renderDash()"></div>
+    <button class="btn btn-red" style="padding:6px 12px;font-size:11px;" onclick="clearFilters()">✕ Clear</button>
+  </div>
+
+  <!-- KPI -->
+  <div style="margin-bottom:10px;">
+    <!-- S.No 1 - Orders -->
+    <div style="font-size:13px;font-weight:800;color:var(--navy);margin-bottom:6px;letter-spacing:.3px;">&#9312; Orders</div>
+    <div class="kpi-grid" style="margin-bottom:10px;">
+      <div class="kpi" style="border-color:var(--teal);"><div class="kpi-lbl">Total Orders</div><div class="kpi-val" id="k_orders">0</div></div>
+      <div class="kpi" style="border-color:var(--green);"><div class="kpi-lbl">Full Received</div><div class="kpi-val" id="k_comp">0</div></div>
+      <div class="kpi" style="border-color:var(--gold);"><div class="kpi-lbl">Partial Received</div><div class="kpi-val" id="k_part">0</div></div>
+      <div class="kpi" style="border-color:var(--red);"><div class="kpi-lbl">Full Pending</div><div class="kpi-val" id="k_pendord">0</div></div>
+      <div class="kpi" style="border-color:var(--purple);"><div class="kpi-lbl">Pending %</div><div class="kpi-val" id="k_recpct">0%</div></div>
+    </div>
+    <!-- S.No 2 - Designs -->
+    <div style="font-size:13px;font-weight:800;color:var(--navy);margin-bottom:6px;letter-spacing:.3px;">&#9313; Designs</div>
+    <div class="kpi-grid" style="margin-bottom:10px;">
+      <div class="kpi" style="border-color:var(--teal);"><div class="kpi-lbl">Total Designs</div><div class="kpi-val" id="k_tdes">0</div></div>
+      <div class="kpi" style="border-color:var(--green);"><div class="kpi-lbl">Full Received</div><div class="kpi-val" id="k_rdes">0</div></div>
+      <div class="kpi" style="border-color:var(--gold);"><div class="kpi-lbl">Partial Received</div><div class="kpi-val" id="k_pdes_part">0</div></div>
+      <div class="kpi" style="border-color:var(--red);"><div class="kpi-lbl">Full Pending</div><div class="kpi-val" id="k_pdes">0</div></div>
+      <div class="kpi" style="border-color:var(--purple);"><div class="kpi-lbl">Pending %</div><div class="kpi-val" id="k_pdespct">0%</div></div>
+    </div>
+    <!-- S.No 3 - Qty -->
+    <div style="font-size:13px;font-weight:800;color:var(--navy);margin-bottom:6px;letter-spacing:.3px;">&#9314; Qty</div>
+    <div class="kpi-grid" style="margin-bottom:10px;">
+      <div class="kpi" style="border-color:var(--blue);"><div class="kpi-lbl">Order Qty</div><div class="kpi-val" id="k_ord">0</div></div>
+      <div class="kpi" style="border-color:var(--green);"><div class="kpi-lbl">Received Qty</div><div class="kpi-val" id="k_rec">0</div></div>
+      <div class="kpi" style="border-color:var(--gold);"><div class="kpi-lbl">Pending Qty</div><div class="kpi-val" id="k_pend">0</div></div>
+      <div class="kpi" style="border-color:var(--red);"><div class="kpi-lbl">Partial Pending Qty</div><div class="kpi-val" id="k_partpend">0</div></div>
+      <div class="kpi" style="border-color:var(--purple);"><div class="kpi-lbl">Pending %</div><div class="kpi-val" id="k_qpendpct">0%</div></div>
+    </div>
+    <!-- S.No 4 - Value -->
+    <div style="font-size:13px;font-weight:800;color:var(--navy);margin-bottom:6px;letter-spacing:.3px;">&#9315; Value (Cost Price)</div>
+    <div class="kpi-grid" style="margin-bottom:10px;">
+      <div class="kpi" style="border-color:var(--teal);"><div class="kpi-lbl">Total CP Val</div><div class="kpi-val" id="k_costval" style="font-size:13px;">&#8377;0</div></div>
+      <div class="kpi" style="border-color:var(--green);"><div class="kpi-lbl">Received CP Val</div><div class="kpi-val" id="k_reccpval" style="font-size:13px;">&#8377;0</div></div>
+      <div class="kpi" style="border-color:var(--gold);"><div class="kpi-lbl">Partial Pend CP</div><div class="kpi-val" id="k_partcpval" style="font-size:13px;">&#8377;0</div></div>
+      <div class="kpi" style="border-color:var(--red);"><div class="kpi-lbl">Pending CP Val</div><div class="kpi-val" id="k_pendcpval" style="font-size:13px;">&#8377;0</div></div>
+    </div>
+    <!-- S.No 5 - MRP Value -->
+    <div style="font-size:13px;font-weight:800;color:var(--navy);margin-bottom:6px;letter-spacing:.3px;">&#9316; Value (MRP)</div>
+    <div class="kpi-grid" style="margin-bottom:10px;">
+      <div class="kpi" style="border-color:var(--teal);"><div class="kpi-lbl">Total MRP Val</div><div class="kpi-val" id="k_mrpval" style="font-size:13px;">&#8377;0</div></div>
+      <div class="kpi" style="border-color:var(--green);"><div class="kpi-lbl">Received MRP Val</div><div class="kpi-val" id="k_recmrpval" style="font-size:13px;">&#8377;0</div></div>
+      <div class="kpi" style="border-color:var(--gold);"><div class="kpi-lbl">Partial Pend MRP</div><div class="kpi-val" id="k_partmrpval" style="font-size:13px;">&#8377;0</div></div>
+      <div class="kpi" style="border-color:var(--red);"><div class="kpi-lbl">Pending MRP Val</div><div class="kpi-val" id="k_pendmrpval" style="font-size:13px;">&#8377;0</div></div>
+    </div>
+    <!-- Other -->
+    <div class="kpi-grid">
+      <div class="kpi" style="border-color:var(--red);cursor:pointer;" onclick="showDelayedOrders()" title="Click to see delayed orders"><div class="kpi-lbl">Delayed &gt;7d &#128064;</div><div class="kpi-val" id="k_del">0</div></div>
+      <div class="kpi" style="border-color:var(--teal);"><div class="kpi-lbl">Avg Cost</div><div class="kpi-val" id="k_avgcost">&#8377;0</div></div>
+    </div>
+  </div>  </div>
+
+  <!-- LOOK NAME REPORT -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-hdr">&#128247; Look Name-wise Summary</div>
+    <div style="padding:0;">
+      <table class="dept-table">
+        <thead><tr><th>LOOK NAME</th><th>ORD QTY</th><th>REC QTY</th><th>PEND QTY</th><th>ORD COST</th><th>ORD MRP</th></tr></thead>
+        <tbody id="lookTbl"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DESIGN SUMMARY TABLE -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-hdr" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>&#128200; Design-wise Summary</span>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="des_search" placeholder="Search..." style="padding:5px 10px;border:1.5px solid rgba(255,255,255,.3);border-radius:8px;font-size:11px;width:150px;background:rgba(255,255,255,.1);color:#fff;" oninput="renderDesignTable()">
+        <select id="des_filter" onchange="renderDesignTable()" style="padding:5px 8px;border:1.5px solid rgba(255,255,255,.3);border-radius:8px;font-size:11px;background:rgba(255,255,255,.1);color:#fff;">
+          <option value="">All</option>
+          <option value="Pending">Pending</option>
+          <option value="Partial">Partial</option>
+          <option value="Completed">Completed</option>
+        </select>
+      </div>
+    </div>
+    <div class="tbl-wrap" style="max-height:350px;">
+      <table>
+        <thead><tr>
+          <th>#</th><th>DESIGN</th><th>ITEM</th><th>LOOK</th><th>DEPT</th>
+          <th class="num">ORD QTY</th><th class="num">REC QTY</th>
+          <th class="num">PEND QTY</th><th class="num">PEND%</th>
+          <th class="num">TOTAL CP</th><th class="num">REC CP</th><th class="num">PEND CP</th>
+          <th class="num">TOTAL MRP</th><th class="num">REC MRP</th><th class="num">PEND MRP</th>
+          <th>STATUS</th>
+        </tr></thead>
+        <tbody id="desTbl"></tbody>
+      </table>
+      <div class="empty" id="desEmpty" style="display:none;">No designs found!</div>
+    </div>
+  </div>
+
+  <!-- DEPT TABLE -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-hdr">👕 Dept-wise Summary</div>
+    <div style="padding:0;">
+      <table class="dept-table">
+        <thead><tr><th>DEPT</th><th>ORD QTY</th><th>REC QTY</th><th>PEND QTY</th><th>ORD COST</th><th>ORD MRP</th><th>REC COST</th><th>REC MRP</th></tr></thead>
+        <tbody id="deptTbl"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-grid">
+    <div class="chart-card"><div class="chart-title">Supplier Received vs Pending %</div><div class="chart-wrap"><canvas id="chSup"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Order Status Split</div><div class="chart-wrap"><canvas id="chStatus"></canvas></div></div>
+    <div class="chart-card wide"><div class="chart-title">Monthly Order vs Receipt Trend</div><div class="chart-wrap" style="height:180px;"><canvas id="chTrend"></canvas></div></div>
+    <div class="chart-card wide"><div class="chart-title">Top 10 Pending Designs</div><div class="chart-wrap" style="height:180px;"><canvas id="chTop10"></canvas></div></div>
+  </div>
+
+<!-- ALL ORDERS -->
+<div class="panel" id="p3">
+  <div class="card">
+    <div class="card-hdr">📋 All Orders
+      <button class="btn" style="background:var(--gold);color:var(--navy);padding:5px 12px;font-size:11px;" onclick="exportCSV()">⬇ CSV</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>SUPPLIER</th><th>ORDER DATE</th><th>EXP DATE</th><th>DEPT</th><th>LOOK NAME</th>
+          <th>DESIGNS</th><th>DESIGN LIST</th>
+          <th>ORD QTY</th><th>REC QTY</th><th>PEND QTY</th>
+          <th>RECV%</th><th>STATUS</th><th>ACTION</th>
+        </tr></thead>
+        <tbody id="allTbl"></tbody>
+      </table>
+      <div class="empty" id="allEmpty">No orders yet. Add from Order Ent
+</div>
+</div>
+</div>
+
+</div>
+<script>let itemDeptMap = JSON.parse(localStorage.getItem('kt_item_dept_map')||'{}');
+
+
+// ── CONFIG ─────────────────────────────────────────────────────
+const API = 'https://script.google.com/macros/s/AKfycbzVJn7ux3jdDuDMkQWep2pzRhe1DgkdNT4KxAv70RAYmYQ_Bty-UOCEcMTXGxgVX9ImdA/exec';
+const ALL_SIZES  = ['0M', '0M-3M', '3M-6M', '6M-9M', '9-12M', '1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-7Y', '7-8Y', '8-9Y', '9-10Y', '11-12Y', '13-14Y'];
+const KEYS       = ['0M', '0M_3M', '3M_6M', '6M_9M', '9_12M', '1_2Y', '2_3Y', '3_4Y', '4_5Y', '5_6Y', '6_7Y', '7_8Y', '8_9Y', '9_10Y', '11_12Y', '13_14Y'];
+const LTOP       = ['S/NB', 'M/10', 'L/12', 'XL/14', '4/16', '6/18', '8/20', '10/22', '12/24', '14/26', '4/28', '6/30', '8/32', '10/34', '12/36', '14/38'];
+const LBOT       = ['0M', '0M-3M', '3M-6M', '6M-9M', '9-12M', '1-2Y', '2-3Y', '3-4Y', '4-5Y', '5-6Y', '6-7Y', '7-8Y', '8-9Y', '9-10Y', '11-12Y', '13-14Y'];
+const COLORS     = ['#0D7C66','#2980B9','#8E44AD','#E67E22','#C0392B','#16A085','#D35400','#1A5276'];
+
+// ── STATE ──────────────────────────────────────────────────────
+let orders    = [];
+let suppliers = ['PS MARKETING','VIJAY TRADERS','VEETEX','LALA HOUSE','TOFFY HOUSE','MINORI'];
+let charts    = {};
+let imgs      = {};
+let drCount   = 0;
+let editMode  = false;
+let editGroup = null; // {supplier, orderDate}
+
+// ── API ────────────────────────────────────────────────────────
+async function apiGet(p={}) {
+  const url = API + '?' + new URLSearchParams(p);
+  const r = await fetch(url, {redirect:'follow'});
+  return r.json();
+}
+async function apiPost(data) {
+  const url = API + '?data=' + encodeURIComponent(JSON.stringify(data));
+  const r = await fetch(url, {redirect:'follow'});
+  return r.json();
+}
+function loading(on) { const el=v('loadBar'); if(el) el.style.display=on?'flex':'none'; }
+
+// ── HELPERS ────────────────────────────────────────────────────
+function v(id) { return document.getElementById(id); }
+function fmt(n) { return Number(n||0).toLocaleString('en-IN'); }
+function fmtD(d) { if(!d) return '—'; const [y,m,dd]=d.split('-'); return dd+'-'+m+'-'+y; }
+function days(a,b) { if(!a||!b) return null; return Math.round((new Date(b)-new Date(a))/86400000); }
+function toast(msg, err=false) {
+  const t=v('toast'); t.textContent=msg; t.className='toast'+(err?' err':'');
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000);
+}
+function status(pct) { return pct>=100?'Completed':pct>0?'Partial':'Pending'; }
+function statusTag(pct) {
+  const s=status(pct);
+  const cls=s==='Completed'?'tag-green':s==='Partial'?'tag-gold':'tag-red';
+  return '<span class="tag '+cls+'">'+s+'</span>';
+}
+function prog(pct) {
+  const col=pct>=100?'var(--green)':pct>0?'var(--gold)':'var(--red)';
+  return '<span class="prog"><span class="prog-fill" style="width:'+Math.min(pct,100)+'%;background:'+col+'"></span></span>'+pct.toFixed(1)+'%';
+}
+
+// ── LOAD DATA ──────────────────────────────────────────────────
+async function loadData() {
+  loading(true);
+  try {
+    const r = await apiGet({action:'getData'});
+    if(r && r.success) {
+      orders    = r.orders    || [];
+      // Merge suppliers from sheet + from orders
+      const fromOrders = [...new Set(orders.map(o=>o.supplier).filter(s=>s))];
+      const fromSheet  = r.suppliers && r.suppliers.length ? r.suppliers : suppliers;
+      suppliers = [...new Set([...fromSheet, ...fromOrders])];
+      // Load item mappings from Google Sheets
+      if(r.itemMappings && Object.keys(r.itemMappings).length) {
+        itemDeptMap = r.itemMappings;
+      }
+    }
+  } catch(e) { console.log('Load error:', e); }
+  loading(false);
+  buildSupDDs();
+  buildDesDDs();
+  updateBadge();
+}
+
+// ── SUPPLIER ───────────────────────────────────────────────────
+function buildSupDDs() {
+  ['o_sup','f_sup'].forEach(id => {
+    const el=v(id); if(!el) return;
+    const cur=el.value;
+    el.innerHTML=(id==='f_sup'?'<option value="">All</option>':'')+
+      '<option value="">-- Select --</option>'+
+      suppliers.map(s=>'<option value="'+s+'"'+(s===cur?' selected':'')+'>'+s+'</option>').join('');
+  });
+  // receipt supplier
+  const rs=v('r_sup'); if(rs) {
+    const cur=rs.value;
+    rs.innerHTML='<option value="">-- All --</option>'+
+      suppliers.map(s=>'<option value="'+s+'"'+(s===cur?' selected':'')+'>'+s+'</option>').join('');
+  }
+}
+function buildDesDDs() {
+  const el=v('r_des'); if(!el) return;
+  const sup=v('r_sup')?.value||'';
+  const list=sup?orders.filter(o=>o.supplier===sup):orders;
+  el.innerHTML='<option value="">-- Select --</option>'+
+    list.map(o=>'<option value="'+o.designNo+'">'+o.designNo+' — '+o.itemName+'</option>').join('');
+}
+function openSupMod() { v('supMod').style.display='flex'; renderSupList(); }
+function closeSupMod() { v('supMod').style.display='none'; }
+async function addSup() {
+  const name=(v('newSup')||v('set_sup'))?.value.trim().toUpperCase();
+  if(!name) return;
+  if(suppliers.includes(name)){ toast('Already exists',true); return; }
+  suppliers.push(name);
+  try { await apiPost({action:'addSupplier',name}); } catch(e) {}
+  buildSupDDs(); renderSupList(); v('newSup').value='';
+  toast('✅ '+name+' added!');
+}
+async function delSup(name) {
+  suppliers=suppliers.filter(s=>s!==name);
+  try { await apiPost({action:'deleteSupplier',name}); } catch(e) {}
+  buildSupDDs(); renderSupList();
+}
+function renderSupList() {
+  const list = v('supList');
+  list.innerHTML = '';
+  suppliers.forEach((s, idx) => {
+    const d = document.createElement('div');
+    d.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #EEF1F6;background:'+(idx%2?'#F8FAFC':'#fff');
+    const sp = document.createElement('span');
+    sp.style.fontSize = '12px'; sp.textContent = s;
+    const btn = document.createElement('button');
+    btn.textContent = '✕';
+    btn.style.cssText = 'border:none;background:none;color:var(--red);cursor:pointer;';
+    btn.addEventListener('click', (function(n){ return function(){ delSup(n); }; })(s));
+    d.appendChild(sp); d.appendChild(btn); list.appendChild(d);
+  });
+}
+const supModEl = v('supMod'); if(supModEl) supModEl.addEventListener('click', e=>{ if(e.target===v('supMod')) closeSupMod(); });
+
+// ── DESIGN ROWS ────────────────────────────────────────────────
+function sizeInputsHTML(drId, clrIdx) {
+  return KEYS.map((k,i)=>
+    '<div class="sz"><div class="sz-lbl"><b>'+LTOP[i]+'</b><br><span>'+LBOT[i]+'</span></div>'
+    +'<input type="number" id="dc_'+drId+'_'+clrIdx+'_'+k+'" placeholder="0" min="0" style="text-align:center;" oninput="calcClrTot('+drId+','+clrIdx+')"></div>'
+  ).join('');
+}
+
+function addDR() {
+  drCount++;
+  const id  = drCount;
+  const col = COLORS[(id-1)%COLORS.length];
+  const div = document.createElement('div');
+  div.id = 'dr_'+id;
+  div.className = 'dr card';
+  div.style.border = '2px solid '+col;
+  const sizeHdrs = KEYS.map((k,i)=>'<th style="font-size:9px;padding:4px 3px;text-align:center;background:var(--navy);color:#fff;white-space:nowrap;min-width:44px;">'+LTOP[i]+'<br><span style="color:#8BA3C7">'+LBOT[i]+'</span></th>').join('');
+  div.innerHTML =
+    '<div class="dr-hdr" style="background:'+col+';">'
+    +'<div class="dr-hdr-left">'
+    +'<span class="dr-num" id="dr_'+id+'_num">'+id+'</span>'
+    +'<span class="dr-label" id="dr_'+id+'_lbl">Design #'+id+'</span>'
+    +'</div>'
+    +'<button onclick="removeDR('+id+')" style="border:none;background:rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px;font-weight:600;">&#x2715; Remove</button>'
+    +'</div>'
+    +'<div class="dr-fields">'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">'
+    +'<div class="fld" style="width:110px;"><label>Design No *</label><input type="text" id="dr_'+id+'_des" placeholder="901" style="font-weight:700;" oninput="updateDRLbl('+id+')"></div>'
+    +'<div class="fld" style="width:110px;"><label>Dept</label><select id="dr_'+id+'_dept"><option value="">--</option><option>Boys</option><option>Girls</option><option>Boys &amp; Girls</option></select></div>'
+    +'<div class="fld" style="width:120px;"><label>Look Name</label><input type="text" id="dr_'+id+'_lookname" placeholder="e.g. Casual"></div>'
+    +'<div class="fld" style="flex:1;min-width:120px;"><label>Item Name</label>'+'<select id="dr_'+id+'_item" onchange="autoFillDept('+id+');updateDRLbl('+id+')" style="width:100%;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:Inter,sans-serif;">'+'<option value="">-- Select Item --</option>'+'</select></div>'
+    +'<div class="fld" style="width:85px;"><label>Avg Cost &#8377;</label><input type="number" id="dr_'+id+'_cost" placeholder="0" oninput="calcDRTot('+id+')"></div>'
+    +'<div class="fld" style="width:85px;"><label>Avg MRP &#8377;</label><input type="number" id="dr_'+id+'_mrp" placeholder="0" oninput="calcDRTot('+id+')"></div>'
+    +'<div class="fld" style="width:55px;"><label>Image</label>'
+    +'<div class="img-box" onclick="trigImg('+id+')">'
+    +'<input type="file" id="dr_'+id+'_imgf" accept="image/*" style="display:none;" onchange="handleImg('+id+',event)">'
+    +'<img id="dr_'+id+'_imgp" style="display:none;width:26px;height:26px;object-fit:cover;border-radius:4px;">'
+    +'<span id="dr_'+id+'_imgph" style="font-size:10px;color:var(--muted);">&#128247;</span>'
+    +'</div></div>'
+    +'</div>'
+    +'<div style="overflow-x:auto;margin-top:8px;">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+    +'<thead><tr>'
+    +'<th style="background:var(--navy);color:#fff;padding:6px 10px;text-align:left;font-size:10px;white-space:nowrap;min-width:110px;">COLOUR</th>'
+    +'<th style="background:var(--navy);color:#fff;padding:6px 6px;font-size:10px;white-space:nowrap;min-width:45px;">TOTAL</th>'
+    +sizeHdrs
+    +'<th style="background:var(--navy);color:#fff;padding:6px 6px;font-size:10px;width:30px;">DEL</th>'
+    +'</tr></thead>'
+    +'<tbody id="dr_'+id+'_clrs"></tbody>'
+    +'</table>'
+    +'<button onclick="addClr('+id+')" style="margin-top:6px;border:1.5px dashed var(--teal);background:var(--teal-lt);color:var(--teal);border-radius:8px;padding:4px 14px;cursor:pointer;font-size:12px;font-weight:700;">&#x2795; Add Colour</button>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;">'
+    +'<div class="fld"><label>Total Qty (Auto)</label><input type="number" id="dr_'+id+'_tot" readonly></div>'
+    +'<div class="fld"><label>Cost Value (Auto)</label><input type="number" id="dr_'+id+'_tcost" readonly></div>'
+    +'<div class="fld"><label>MRP Value (Auto)</label><input type="number" id="dr_'+id+'_tmrp" readonly></div>'
+    +'</div>'
+    +'</div>';
+  v('drContainer').appendChild(div);
+  addClr(id);
+  reNumDRs();
+  updateSum();
+  buildItemDropdowns();
+}
+
+function removeDR(id) {
+  const el=v('dr_'+id); if(el) el.remove();
+  delete imgs[id];
+  reNumDRs(); updateSum();
+}
+
+function reNumDRs() {
+  document.querySelectorAll('[id^="dr_"].dr').forEach((el,i)=>{
+    const numEl=el.querySelector('.dr-num');
+    if(numEl) numEl.textContent=i+1;
+  });
+}
+
+function updateDRLbl(id) {
+  const d=v('dr_'+id+'_des')?.value.trim()||'';
+  const it=v('dr_'+id+'_item')?.value.trim()||'';
+  const lbl=v('dr_'+id+'_lbl');
+  if(lbl) lbl.textContent=d?(d+(it?' — '+it:'')):'Design #'+id;
+}
+
+function addClr(drId) {
+  const cc = v('dr_'+drId+'_clrs'); if(!cc) return;
+  const ci = cc.children.length + 1;
+  const col = COLORS[(ci-1)%COLORS.length];
+  const sizeInputs = KEYS.map(k=>
+    '<td style="padding:2px;border:1px solid #EEF1F6;">'
+    +'<input type="number" id="dc_'+drId+'_'+ci+'_'+k+'" placeholder="0" min="0" '
+    +'style="width:100%;text-align:center;padding:4px 2px;font-size:11px;border:none;outline:none;background:transparent;" '
+    +'oninput="calcClrTot('+drId+','+ci+')">'
+    +'</td>'
+  ).join('');
+  const tr = document.createElement('tr');
+  tr.id = 'dc_'+drId+'_'+ci+'_wrap';
+  tr.style.background = ci%2===0?'#F8FAFC':'#fff';
+  tr.innerHTML =
+    '<td style="padding:4px 6px;border:1px solid #EEF1F6;">'
+    +'<div style="display:flex;align-items:center;gap:6px;">'
+    +'<span style="width:10px;height:10px;border-radius:50%;background:'+col+';display:inline-block;flex-shrink:0;"></span>'
+    +'<input type="text" id="dc_'+drId+'_'+ci+'_name" placeholder="RED" '
+    +'style="width:75px;padding:4px 6px;border:1.5px solid #D0D5DD;border-radius:5px;font-size:11px;font-weight:700;text-transform:uppercase;" '
+    +'oninput="this.value=this.value.toUpperCase()">'
+    +'</div></td>'
+    +'<td style="padding:3px;border:1px solid #EEF1F6;text-align:center;font-weight:700;font-size:12px;" id="dc_'+drId+'_'+ci+'_tot">0</td>'
+    +sizeInputs
+    +'<td style="padding:3px;border:1px solid #EEF1F6;text-align:center;">'
+    +(ci>1?'<button onclick="removeClr('+drId+','+ci+')" style="border:none;background:none;color:var(--red);cursor:pointer;font-size:14px;">&#x2715;</button>':'')
+    +'</td>';
+  cc.appendChild(tr);
+  calcDRTot(drId);
+}
+
+function removeClr(drId, ci) {
+  const el=v('dc_'+drId+'_'+ci+'_wrap'); if(el) el.remove();
+  calcDRTot(drId);
+}
+
+function calcClrTot(drId, ci) {
+  let t=0;
+  KEYS.forEach(k=>{ t+=parseFloat(v('dc_'+drId+'_'+ci+'_'+k)?.value)||0; });
+  const el=v('dc_'+drId+'_'+ci+'_tot');
+  if(el) el.textContent=t;
+  calcDRTot(drId);
+}
+
+function calcDRTot(drId) {
+  const cc=v('dr_'+drId+'_clrs'); if(!cc) return;
+  let tot=0;
+  Array.from(cc.children).forEach((el,ci)=>{
+    KEYS.forEach(k=>{ tot+=parseFloat(v('dc_'+drId+'_'+(ci+1)+'_'+k)?.value)||0; });
+  });
+  const cost=parseFloat(v('dr_'+drId+'_cost')?.value)||0;
+  const mrp =parseFloat(v('dr_'+drId+'_mrp')?.value)||0;
+  const ti=v('dr_'+drId+'_tot');   if(ti)    ti.value=tot||'';
+  const tc=v('dr_'+drId+'_tcost'); if(tc) tc.value=tot&&cost?Math.round(tot*cost*100)/100:'';
+  const tm=v('dr_'+drId+'_tmrp');  if(tm)  tm.value=tot&&mrp ?Math.round(tot*mrp*100)/100 :'';
+  updateSum();
+}
+
+function getClrData(drId) {
+  const cc=v('dr_'+drId+'_clrs'); if(!cc) return [];
+  return Array.from(cc.children).map((el,ci)=>{
+    const cidx=ci+1;
+    const name=v('dc_'+drId+'_'+cidx+'_name')?.value.trim()||'';
+    const sizes={};let tot=0;
+    KEYS.forEach(k=>{ const val=parseFloat(v('dc_'+drId+'_'+cidx+'_'+k)?.value)||0; sizes[k]=val; tot+=val; });
+    return {name,sizes,tot};
+  });
+}
+
+function updateSum() {
+  const rows=document.querySelectorAll('[id^="dr_"].dr');
+  let tq=0,tc=0,tm=0;
+  rows.forEach(r=>{
+    const id=r.id.split('_')[1];
+    tq+=parseFloat(v('dr_'+id+'_tot')?.value)||0;
+    tc+=parseFloat(v('dr_'+id+'_tcost')?.value)||0;
+    tm+=parseFloat(v('dr_'+id+'_tmrp')?.value)||0;
+  });
+  v('s_designs').textContent=rows.length;
+  v('s_qty').textContent=fmt(tq);
+  v('s_cost').textContent='₹'+fmt(Math.round(tc));
+  v('s_mrp').textContent='₹'+fmt(Math.round(tm));
+}
+
+function trigImg(id) { v('dr_'+id+'_imgf').click(); }
+function handleImg(id,e) {
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    imgs[id]=ev.target.result;
+    const img=v('dr_'+id+'_imgp'); if(img){img.src=ev.target.result;img.style.display='block';}
+    const ph=v('dr_'+id+'_imgph'); if(ph) ph.style.display='none';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── SAVE ORDERS ────────────────────────────────────────────────
+function mainSave() {
+  if(editMode) { updateOrders(); } else { saveOrders(); }
+}
+
+async function saveOrders() {
+  const sup=v('o_sup').value;
+  const dt =v('o_date').value;
+  const exp=v('o_exp').value;
+  if(!sup||!dt||!exp) { toast('⚠ Fill Supplier, Order Date, Expected Date',true); return; }
+
+  const rows=document.querySelectorAll('[id^="dr_"].dr');
+  if(!rows.length) { toast('⚠ Add at least one design',true); return; }
+
+  // Validate
+  for(let r of rows) {
+    const id=r.id.split('_')[1];
+    const des=v('dr_'+id+'_des')?.value.trim();
+    const itm=(v('dr_'+id+'_item')?.value||v('dr_'+id+'_item_txt')?.value||'').trim();
+    if(!des)  { toast('⚠ Design No missing!',true); return; }
+  }
+
+  loading(true);
+  let saved=0;
+  for(let r of rows) {
+    const id  =r.id.split('_')[1];
+    const des =v('dr_'+id+'_des').value.trim();
+    const itm=(v('dr_'+id+'_item')?.value||v('dr_'+id+'_item_txt')?.value||'').trim();
+    const clr =v('dr_'+id+'_clr')?.value.trim()||'';
+    const dept=v('dr_'+id+'_dept')?.value||'';
+    const cost=parseFloat(v('dr_'+id+'_cost')?.value)||0;
+    const mrp =parseFloat(v('dr_'+id+'_mrp')?.value)||0;
+    const clrs=getClrData(id);
+    const sizes={};KEYS.forEach(k=>sizes[k]=0);
+    clrs.forEach(c=>KEYS.forEach(k=>sizes[k]+=(c.sizes[k]||0)));
+    const tot=KEYS.reduce((a,k)=>a+sizes[k],0);
+    const emptyRec={};KEYS.forEach(k=>emptyRec[k]=0);
+    const ord={
+      id:Date.now()+saved, supplier:sup, designNo:des, colour:clr, dept, lookname:(v('dr_'+id+'_lookname')?.value.trim()||''),
+      orderDate:dt, expectedDate:exp, itemName:itm,
+      image:imgs[id]||'', avgCost:cost, avgMrp:mrp,
+      totalCost:Math.round(tot*cost*100)/100, totalMrp:Math.round(tot*mrp*100)/100,
+      colours:clrs, orderedSizes:sizes, orderedTotal:tot,
+      receivedSizes:{...emptyRec}, receivedTotal:0,
+      billNo:'', billDate:'', receiptDate:'', status:'Pending'
+    };
+    try {
+      const res=await apiPost({action:'saveOrder',order:ord});
+      if(res.success){ ord.id=res.id; orders.push(ord); saved++; }
+      else toast('⚠ '+res.error,true);
+    } catch(e) { orders.push(ord); saved++; }
+  }
+  loading(false);
+  await loadData();
+  buildDesDDs(); updateBadge();
+  toast('✅ '+saved+' design'+(saved>1?'s':'')+' saved for '+sup+'!');
+  resetForm();
+  goTab(3);
+}
+
+async function updateOrders() {
+  const sup=v('o_sup').value;
+  const dt =v('o_date').value;
+  const exp=v('o_exp').value;
+  if(!sup||!dt||!exp){ toast('Fill required fields',true); return; }
+
+  const rows=document.querySelectorAll('[id^="dr_"].dr');
+  if(!rows.length){ toast('No design rows',true); return; }
+
+  loading(true);
+
+  // Build new orders list
+  const newOrders = [];
+  for(let r of rows){
+    const id  = r.id.split('_')[1];
+    const des = v('dr_'+id+'_des')?.value.trim();
+    if(!des) continue;
+    const itm      = (v('dr_'+id+'_item')?.value||'').trim();
+    const clr      = v('dr_'+id+'_clr')?.value.trim()||'';
+    const dept     = v('dr_'+id+'_dept')?.value||'';
+    const lookname = v('dr_'+id+'_lookname')?.value.trim()||'';
+    const cost     = parseFloat(v('dr_'+id+'_cost')?.value)||0;
+    const mrp      = parseFloat(v('dr_'+id+'_mrp')?.value)||0;
+    const clrs     = getClrData(id);
+    const sizes    = {}; KEYS.forEach(k=>sizes[k]=0);
+    clrs.forEach(c=>KEYS.forEach(k=>sizes[k]+=(c.sizes[k]||0)));
+    const tot      = KEYS.reduce((a,k)=>a+sizes[k],0);
+    const emptyRec = {}; KEYS.forEach(k=>emptyRec[k]=0);
+
+    // Find existing order to preserve receipt data
+    const existing = orders.find(o=>o.supplier===sup&&o.orderDate===dt&&o.designNo==des);
+
+    newOrders.push({
+      id: existing ? existing.id : Date.now()+newOrders.length,
+      supplier:sup, designNo:des, colour:clr, dept, lookname,
+      orderDate:dt, expectedDate:exp, itemName:itm,
+      image:imgs[id]||'', avgCost:cost, avgMrp:mrp,
+      totalCost:Math.round(tot*cost*100)/100,
+      totalMrp:Math.round(tot*mrp*100)/100,
+      colours:clrs, orderedSizes:sizes, orderedTotal:tot,
+      receivedSizes: existing ? existing.receivedSizes : {...emptyRec},
+      receivedTotal: existing ? existing.receivedTotal : 0,
+      billNo:   existing ? existing.billNo   : '',
+      billDate: existing ? existing.billDate : '',
+      receiptDate: existing ? existing.receiptDate : '',
+      status: existing ? existing.status : 'Pending'
+    });
+  }
+
+  if(!newOrders.length){ loading(false); toast('No valid designs',true); return; }
+
+  // Delete old orders for this group
+  const oldOrders = orders.filter(o=>o.supplier===sup&&o.orderDate===dt);
+  for(let o of oldOrders){
+    try{ await apiPost({action:'deleteOrder', id:o.id}); }catch(e){}
+  }
+  orders = orders.filter(o=>!(o.supplier===sup&&o.orderDate===dt));
+
+  // Save new orders
+  let saved=0;
+  for(let ord of newOrders){
+    try{
+      const res = await apiPost({action:'saveOrder', order:ord});
+      if(res.success){ ord.id=res.id; orders.push(ord); saved++; }
+      else{ orders.push(ord); saved++; } // save locally even if API fails
+    }catch(e){ orders.push(ord); saved++; }
+  }
+
+  loading(false);
+  await loadData();
+  buildDesDDs(); updateBadge();
+  toast('Updated '+saved+' designs for '+sup+'!');
+  resetForm();
+  goTab(3);
+}
+
+function resetForm() {
+  v('o_sup').value=''; v('o_date').value=''; v('o_exp').value='';
+  v('drContainer').innerHTML='';
+  imgs={}; drCount=0; editMode=false; editGroup=null;
+  v('oFormTitle').textContent='📦 New Order';
+  const btn=v('mainBtn');
+  if(btn){ btn.textContent='📦 Save All Orders'; btn.onclick=mainSave; btn.style.background='var(--teal)'; }
+  updateSum();
+  addDR();
+}
+
+function cancelOrder() { resetForm(); toast('Cancelled'); }
+
+// ── EDIT GROUP ─────────────────────────────────────────────────
+function openEditGroup(sup, dt) {
+  const grp=orders.filter(o=>o.supplier===sup&&o.orderDate===dt);
+  if(!grp.length) return;
+  editMode=true; editGroup={supplier:sup,orderDate:dt};
+  goTab(0);
+  v('o_sup').value=sup;
+  v('o_date').value=dt;
+  v('o_exp').value=grp[0].expectedDate;
+  v('oFormTitle').textContent='✏️ Editing: '+sup+' ('+fmtD(dt)+')';
+  const btn=v('mainBtn');
+  if(btn){ btn.textContent='💾 Update Orders'; btn.onclick=mainSave; btn.style.background='#E67E22'; }
+  v('drContainer').innerHTML='';
+  imgs={}; drCount=0;
+
+  grp.forEach(o=>{
+    addDR();
+    const id=drCount;
+    v('dr_'+id+'_des').value=o.designNo;
+    v('dr_'+id+'_item').value=o.itemName;
+    const ce=v('dr_'+id+'_clr');   if(ce) ce.value=o.colour||'';
+    const de=v('dr_'+id+'_dept');  if(de) de.value=o.dept||'';
+    const le=v('dr_'+id+'_lookname'); if(le) le.value=o.lookname||'';
+    const coe=v('dr_'+id+'_cost'); if(coe) coe.value=o.avgCost||'';
+    const me=v('dr_'+id+'_mrp');   if(me)  me.value=o.avgMrp||'';
+    if(o.image){ imgs[id]=o.image; const ip=v('dr_'+id+'_imgp'); if(ip){ip.src=o.image;ip.style.display='block';} const ph=v('dr_'+id+'_imgph'); if(ph) ph.style.display='none'; }
+    // Restore colours
+    const cc=v('dr_'+id+'_clrs'); if(cc) cc.innerHTML='';
+    const cl=o.colours&&o.colours.length?o.colours:[{name:o.colour||'',sizes:o.orderedSizes||{},tot:o.orderedTotal||0}];
+    cl.forEach((c,ci)=>{
+      addClr(id); const cidx=ci+1;
+      const ne=v('dc_'+id+'_'+cidx+'_name'); if(ne) ne.value=c.name||'';
+      KEYS.forEach(k=>{ const el=v('dc_'+id+'_'+cidx+'_'+k); if(el) el.value=c.sizes&&c.sizes[k]?c.sizes[k]:''; });
+      calcClrTot(id,cidx);
+    });
+    updateDRLbl(id); calcDRTot(id);
+  });
+  toast('✏ Editing '+grp.length+' designs');
+}
+
+// ── RECEIPT ────────────────────────────────────────────────────
+
+
+
+
+
+
+
+
+
+let rDesignRows = {};
+
+function loadReceiptDesigns() {
+  const sup=v('r_sup').value;
+  const container=v('r_designsContainer');
+  container.innerHTML=''; rDesignRows={};
+  const list=sup?orders.filter(o=>o.supplier===sup):orders;
+  list.forEach(o=>addReceiptDesignRow(o));
+  calcReceiptTotals();
+}
+
+function addReceiptDesignRow(o) {
+  const container=v('r_designsContainer');
+  const card=document.createElement('div');
+  card.className='dr card'; card.id='rdr_'+o.designNo;
+  const col=COLORS[Object.keys(rDesignRows).length%COLORS.length];
+  card.style.border='2px solid '+col;
+  const sizeHdrs=KEYS.map((k,i)=>'<th style="background:var(--navy);color:#fff;padding:4px 3px;font-size:9px;text-align:center;min-width:42px;">'+LTOP[i]+'<br><span style="color:#8BA3C7">'+LBOT[i]+'</span></th>').join('');
+  card.innerHTML=
+    '<div class="dr-hdr" style="background:'+col+';">'
+    +'<div class="dr-hdr-left"><span class="dr-label">'+o.designNo+' \u2014 '+o.itemName+(o.dept?' ('+o.dept+')':'')+'</span></div>'
+    +'<span style="color:#fff;font-size:11px;opacity:.8;">Ordered: '+o.orderedTotal+' | Exp: '+fmtD(o.expectedDate)+'</span>'
+    +'</div>'
+    +'<div class="dr-fields">'
+    +'<div style="overflow-x:auto;">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+    +'<thead><tr>'
+    +'<th style="background:var(--navy);color:#fff;padding:6px 10px;text-align:left;font-size:10px;min-width:110px;">COLOUR</th>'
+    +'<th style="background:var(--navy);color:#fff;padding:6px 8px;font-size:10px;min-width:50px;">TOTAL</th>'
+    +sizeHdrs
+    +'<th style="background:var(--navy);color:#fff;padding:6px 4px;font-size:10px;width:28px;">DEL</th>'
+    +'</tr></thead>'
+    +'<tbody id="rclr_'+o.designNo+'"></tbody>'
+    +'</table>'
+    +'<button onclick="addRClr(\''+o.designNo+'\')" style="margin-top:6px;border:1.5px dashed var(--teal);background:var(--teal-lt);color:var(--teal);border-radius:8px;padding:4px 14px;cursor:pointer;font-size:12px;font-weight:700;">&#x2795; Add Colour</button>'
+    +'</div>'
+    +'<div style="display:flex;gap:16px;margin-top:8px;font-size:12px;">'
+    +'<span>Received: <strong id="rtot_'+o.designNo+'">0</strong></span>'
+    +'<span>Pending: <strong id="rpend_'+o.designNo+'">0</strong></span>'
+    +'</div>'
+    +'</div>';
+  container.appendChild(card);
+  rDesignRows[o.designNo]={orderedTotal:o.orderedTotal,clrCount:0};
+  const colours=o.colours&&o.colours.length?o.colours:(o.colour?[{name:o.colour,sizes:o.receivedSizes||{}}]:[{name:'',sizes:{}}]);
+  colours.forEach(c=>addRClrRow(o.designNo,c.name,o.receivedSizes||{}));
+}
+
+function addRClr(desNo){addRClrRow(desNo,'',{});}
+
+function addRClrRow(desNo,name,receivedSizes){
+  if(!rDesignRows[desNo])rDesignRows[desNo]={orderedTotal:0,clrCount:0};
+  rDesignRows[desNo].clrCount++;
+  const ci=rDesignRows[desNo].clrCount;
+  const col=COLORS[(ci-1)%COLORS.length];
+  const tbody=v('rclr_'+desNo);if(!tbody)return;
+  const sizeInputs=KEYS.map(k=>{
+    const val=receivedSizes[k]||'';
+    return '<td style="padding:2px;border:1px solid #EEF1F6;"><input type="number" id="rc_'+desNo+'_'+ci+'_'+k+'" value="'+(val||'')+'" placeholder="0" min="0" style="width:100%;text-align:center;padding:4px 2px;font-size:11px;border:none;outline:none;background:transparent;" oninput="calcReceiptTotals()"></td>';
+  }).join('');
+  const tr=document.createElement('tr');
+  tr.id='rc_'+desNo+'_'+ci+'_wrap';
+  tr.style.background=ci%2===0?'#F8FAFC':'#fff';
+  tr.innerHTML=
+    '<td style="padding:4px 6px;border:1px solid #EEF1F6;">'
+    +'<div style="display:flex;align-items:center;gap:6px;">'
+    +'<span style="width:10px;height:10px;border-radius:50%;background:'+col+';display:inline-block;flex-shrink:0;"></span>'
+    +'<input type="text" id="rc_'+desNo+'_'+ci+'_name" placeholder="RED" value="'+(name||'')+'" style="width:75px;padding:4px 6px;border:1.5px solid #D0D5DD;border-radius:5px;font-size:11px;font-weight:700;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">'
+    +'</div></td>'
+    +'<td style="padding:3px;border:1px solid #EEF1F6;text-align:center;font-weight:700;font-size:12px;" id="rc_'+desNo+'_'+ci+'_tot">0</td>'
+    +sizeInputs
+    +'<td style="padding:3px;border:1px solid #EEF1F6;text-align:center;">'
+    +(ci>1?'<button onclick="removeRClr(\''+desNo+'\','+ci+')" style="border:none;background:none;color:var(--red);cursor:pointer;font-size:14px;">&#x2715;</button>':'')
+    +'</td>';
+  tbody.appendChild(tr);
+  calcReceiptTotals();
+}
+
+function removeRClr(desNo,ci){
+  const el=v('rc_'+desNo+'_'+ci+'_wrap');if(el)el.remove();
+  calcReceiptTotals();
+}
+
+function filterDesigns() {
+  buildDesDDs();
+  clearReceipt();
+  loadReceiptDesigns();
+}
+function loadOrderInfo() {}
+function calcReceiptTotals() {
+  let grandTotal=0, grandOrdered=0;
+  Object.keys(rDesignRows).forEach(desNo=>{
+    const info=rDesignRows[desNo];
+    let desTot=0;
+    for(let ci=1;ci<=info.clrCount;ci++){
+      const wrap=v('rc_'+desNo+'_'+ci+'_wrap'); if(!wrap) continue;
+      let rowTot=0;
+      KEYS.forEach(k=>{rowTot+=parseFloat(v('rc_'+desNo+'_'+ci+'_'+k)?.value)||0;});
+      const totEl=v('rc_'+desNo+'_'+ci+'_tot'); if(totEl) totEl.textContent=rowTot;
+      desTot+=rowTot;
+    }
+    const te=v('rtot_'+desNo); if(te) te.textContent=desTot;
+    const pe=v('rpend_'+desNo); if(pe) pe.textContent=Math.max(0,info.orderedTotal-desTot);
+    grandTotal+=desTot; grandOrdered+=info.orderedTotal;
+  });
+  v('r_tot').textContent=grandTotal;
+  v('r_ordtot').textContent=grandOrdered;
+  v('r_pend').textContent=Math.max(0,grandOrdered-grandTotal);
+  const pct=grandOrdered>0?(grandTotal/grandOrdered*100).toFixed(1):0;
+  v('r_recvpct').textContent=pct+'%';
+  calcDelay();
+}
+function calcDelay() {
+  const rd=v('r_date')?.value; if(!rd){v('r_delay').value='';return;}
+  const sup=v('r_sup')?.value;
+  const first=orders.find(o=>!sup||o.supplier===sup);
+  if(first){
+    const d=days(first.expectedDate,rd);
+    v('r_delay').value=d===null?'':d>0?'+'+d+' LATE':d===0?'On Time':Math.abs(d)+' Early';
+  }
+}
+function clearReceipt() {
+  ['r_sup','r_date','r_bill','r_bdate','r_delay'].forEach(id=>{const el=v(id);if(el)el.value='';});
+  const dc=v('r_designsContainer');if(dc)dc.innerHTML='';
+  rDesignRows={};
+  ['r_tot','r_ordtot','r_pend'].forEach(id=>{const el=v(id);if(el)el.textContent='0';});
+  const rp=v('r_recvpct');if(rp)rp.textContent='0%';
+}
+
+function clearReceiptTable() {
+  const tbody=v('r_colourTbl'); if(tbody) tbody.innerHTML='';
+  const hdr=v('r_clrHdr'); if(hdr) hdr.innerHTML='';
+  rClrCount=0;
+}
+async function saveReceipt() {
+  const rd=v('r_date').value, bn=v('r_bill').value.trim(), bd=v('r_bdate').value;
+  if(!rd||!bn||!bd){toast('Fill Receipt Date, Bill Number, Bill Date',true);return;}
+  if(!Object.keys(rDesignRows).length){toast('No designs loaded. Select Supplier first.',true);return;}
+  loading(true);
+  let saved=0;
+  for(const desNo of Object.keys(rDesignRows)){
+    const info=rDesignRows[desNo];
+    const sizes={};KEYS.forEach(k=>sizes[k]=0);
+    let tot=0;
+    for(let ci=1;ci<=info.clrCount;ci++){
+      const wrap=v('rc_'+desNo+'_'+ci+'_wrap');if(!wrap)continue;
+      KEYS.forEach(k=>{const val=parseFloat(v('rc_'+desNo+'_'+ci+'_'+k)?.value)||0;sizes[k]+=val;tot+=val;});
+    }
+    if(tot===0) continue;
+    const idx=orders.findIndex(o=>o.designNo===desNo);
+    if(idx>=0){
+      orders[idx].receivedSizes=sizes;orders[idx].receivedTotal=tot;
+      orders[idx].receiptDate=rd;orders[idx].billNo=bn;orders[idx].billDate=bd;
+      const pct=orders[idx].orderedTotal>0?tot/orders[idx].orderedTotal*100:0;
+      orders[idx].status=pct>=100?'Completed':pct>0?'Partial':'Pending';
+    }
+    try{await apiPost({action:'saveReceipt',receipt:{designNo:desNo,receiptDate:rd,billNo:bn,billDate:bd,receivedTotal:tot,receivedSizes:sizes}});saved++;}catch(e){saved++;}
+  }
+  loading(false);
+  clearReceipt();
+  await loadData();
+  updateBadge();
+  toast('✅ Receipt saved for '+saved+' design'+(saved>1?'s':'')+'!');
+}
+
+// ── ALL ORDERS ─────────────────────────────────────────────────
+function renderAllOrders() {
+  const tbody=v('allTbl'), empty=v('allEmpty');
+  if(!orders.length){ tbody.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+  const groups={};
+  orders.forEach(o=>{
+    const key=o.supplier+'||'+o.orderDate;
+    if(!groups[key]) groups[key]={supplier:o.supplier,orderDate:o.orderDate,expectedDate:o.expectedDate,designs:[]};
+    groups[key].designs.push(o);
+  });
+  tbody.innerHTML='';
+  Object.values(groups).forEach(g=>{
+    const tOrd=g.designs.reduce((a,d)=>a+d.orderedTotal,0);
+    const tRec=g.designs.reduce((a,d)=>a+d.receivedTotal,0);
+    const pct=tOrd>0?tRec/tOrd*100:0;
+    const depts=[...new Set(g.designs.map(d=>d.dept).filter(d=>d))].join(', ')||'—';
+    const looks=[...new Set(g.designs.map(d=>d.lookname).filter(d=>d))].join(', ')||'—';
+    const desList=g.designs.map(d=>'<span class="tag" style="background:#E6F4F1;color:var(--teal);margin:2px;">'+d.designNo+(d.colour?' ('+d.colour+')':'')+'</span>').join('');
+    const tr=document.createElement('tr');
+    tr.title='Click to edit'; tr.style.cursor='pointer';
+    tr.innerHTML='<td style="font-weight:600;color:var(--teal);">✏ '+g.supplier+'</td>'
+      +'<td>'+fmtD(g.orderDate)+'</td><td>'+fmtD(g.expectedDate)+'</td>'
+      +'<td><span class="tag" style="background:var(--teal-lt);color:var(--teal);">'+depts+'</span></td>'
+      +'<td>'+looks+'</td>'
+      +'<td class="num">'+g.designs.length+'</td>'
+      +'<td style="max-width:250px;white-space:normal;">'+desList+'</td>'
+      +'<td class="num">'+fmt(tOrd)+'</td><td class="num">'+fmt(tRec)+'</td>'
+      +'<td class="num">'+fmt(Math.max(0,tOrd-tRec))+'</td>'
+      +'<td>'+prog(pct)+'</td><td>'+statusTag(pct)+'</td>'
+      +'<td style="white-space:nowrap;"></td>';
+    const ac=document.createElement('button');
+    ac.textContent='+Design';
+    ac.style.cssText='border:none;background:var(--teal);color:#fff;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:11px;font-weight:600;margin-right:4px;';
+    ac.addEventListener('click',(function(a,b,c){return function(e){e.stopPropagation();addDesignTo(a,b,c);};})(g.supplier,g.orderDate,g.expectedDate));
+    const dc=document.createElement('button');
+    dc.textContent='✕'; dc.style.cssText='border:none;background:none;color:var(--red);cursor:pointer;font-size:14px;opacity:.6;';
+    dc.addEventListener('click',(function(a,b){return function(e){e.stopPropagation();deleteGrp(a,b);};})(g.supplier,g.orderDate));
+    tr.lastElementChild.appendChild(ac); tr.lastElementChild.appendChild(dc);
+    tr.addEventListener('click',(function(a,b){return function(){openEditGroup(a,b);};})(g.supplier,g.orderDate));
+    tbody.appendChild(tr);
+  });
+}
+
+function addDesignTo(sup, dt, exp) {
+  resetForm();
+  v('o_sup').value=sup;
+  v('o_date').value=dt;
+  v('o_exp').value=exp;
+  v('oFormTitle').textContent='📦 Adding Design for: '+sup;
+  toast('➕ Add design for '+sup);
+}
+
+async function deleteGrp(sup, dt) {
+  if(!confirm('Delete all designs for '+sup+'?')) return;
+  const existing=orders.filter(o=>o.supplier===sup&&o.orderDate===dt);
+  loading(true);
+  for(let o of existing){ try{ await apiPost({action:'deleteOrder',id:o.id}); }catch(e){} }
+  loading(false);
+  orders=orders.filter(o=>!(o.supplier===sup&&o.orderDate===dt));
+  renderAllOrders(); updateBadge(); buildDesDDs();
+  toast('✅ Deleted '+existing.length+' designs');
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────
+function getFiltered() {
+  let d=[...orders];
+  const sup=v('f_sup')?.value, st=v('f_st')?.value;
+  const dept=v('f_dept')?.value, des=(v('f_des')?.value||'').toLowerCase();
+  const fr=v('f_from')?.value, to=v('f_to')?.value;
+  if(sup)  d=d.filter(o=>o.supplier===sup);
+  if(st)   d=d.filter(o=>o.status===st);
+  if(dept) d=d.filter(o=>(o.dept||'')===dept);
+  if(des)  d=d.filter(o=>o.designNo.toLowerCase().includes(des)||o.itemName.toLowerCase().includes(des));
+  if(fr)   d=d.filter(o=>o.orderDate>=fr);
+  if(to)   d=d.filter(o=>o.orderDate<=to);
+  return d;
+}
+function clearFilters() {
+  ['f_sup','f_st','f_dept','f_from','f_to'].forEach(id=>{ const el=v(id); if(el) el.value=''; });
+  renderDash();
+}
+function renderDash() {
+  const data=getFiltered();
+  const tOrd=data.reduce((a,o)=>a+o.orderedTotal,0);
+  const tRec=data.reduce((a,o)=>a+o.receivedTotal,0);
+  const delayed=data.filter(o=>{const d=days(o.expectedDate,o.receiptDate);return d!==null&&d>7;}).length;
+  const comp=new Set(data.filter(o=>o.status==='Completed').map(o=>o.supplier+'||'+o.orderDate)).size;
+  const part=new Set(data.filter(o=>o.status==='Partial').map(o=>o.supplier+'||'+o.orderDate)).size;
+  const pend=new Set(data.filter(o=>o.status==='Pending').map(o=>o.supplier+'||'+o.orderDate)).size;
+  const pct=tOrd>0?tRec/tOrd*100:0;
+  const avgC=data.filter(o=>o.avgCost>0).map(o=>o.avgCost);
+
+  // Count unique supplier+date groups
+  const grpCount = new Set(data.map(o=>o.supplier+'||'+o.orderDate)).size;
+  v('k_orders').textContent=grpCount;
+  v('k_ord').textContent=fmt(tOrd);
+  v('k_rec').textContent=fmt(tRec);
+  v('k_pend').textContent=fmt(Math.max(0,tOrd-tRec));
+  v('k_del').textContent=delayed;
+  v('k_comp').textContent=comp;
+  v('k_part').textContent=part;
+  v('k_pendord').textContent=pend;
+  const pendOrderPct = grpCount>0?((pend/grpCount)*100).toFixed(1):0;
+  v('k_recpct').textContent=pendOrderPct+'%';
+  const tCost=data.reduce((a,o)=>a+(o.totalCost||o.orderedTotal*(o.avgCost||0)),0);
+  const tMrp =data.reduce((a,o)=>a+(o.totalMrp ||o.orderedTotal*(o.avgMrp ||0)),0);
+  // Design counts
+  const totalDes   = data.length;
+  const recDes     = data.filter(o=>o.status==='Completed').length;
+  const partDes    = data.filter(o=>o.status==='Partial').length;
+  const pendDes    = data.filter(o=>o.status==='Pending').length;
+  const pendDesPct = totalDes>0?(pendDes/totalDes*100).toFixed(1):0;
+  const td=v('k_tdes');     if(td) td.textContent=totalDes;
+  const rd=v('k_rdes');     if(rd) rd.textContent=recDes;
+  const pdp=v('k_pdes_part'); if(pdp) pdp.textContent=partDes;
+  const pd=v('k_pdes');     if(pd) pd.textContent=pendDes;
+  const pp=v('k_pdespct');  if(pp) pp.textContent=pendDesPct+'%';
+  const cv=v('k_costval'); if(cv) cv.textContent='₹'+fmt(Math.round(tCost));
+  const mv=v('k_mrpval');  if(mv) mv.textContent='₹'+fmt(Math.round(tMrp));
+  v('k_avgcost').textContent='₹'+(avgC.length?avgC.reduce((a,b)=>a+b,0)/avgC.length:0).toFixed(0);
+
+  // Dept table
+  // Look Name report
+  const lookNames = [...new Set(data.map(o=>o.lookname||'').filter(l=>l))];
+  const lookTbl = v('lookTbl');
+  if(lookTbl) {
+    lookTbl.innerHTML = lookNames.map((lk,i)=>{
+      const lOrds = data.filter(o=>(o.lookname||'')=== lk);
+      const lOrd  = lOrds.reduce((a,o)=>a+o.orderedTotal,0);
+      const lRec  = lOrds.reduce((a,o)=>a+o.receivedTotal,0);
+      const lCost = lOrds.reduce((a,o)=>a+(o.totalCost||0),0);
+      const lMrp  = lOrds.reduce((a,o)=>a+(o.totalMrp||0),0);
+      return '<tr>'
+        +'<td style="font-weight:600;">'+lk+'</td>'
+        +'<td class="num">'+fmt(lOrd)+'</td>'
+        +'<td class="num">'+fmt(lRec)+'</td>'
+        +'<td class="num">'+fmt(Math.max(0,lOrd-lRec))+'</td>'
+        +'<td class="num">&#8377;'+fmt(Math.round(lCost))+'</td>'
+        +'<td class="num">&#8377;'+fmt(Math.round(lMrp))+'</td>'
+        +'</tr>';
+    }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:12px;">No look name data</td></tr>';
+  }
+
+  const DEPTS=['Boys','Girls','Boys & Girls'];
+  const deptTbl=v('deptTbl');
+  let totalOrd=0,totalRec=0,totalCost=0,totalMrp=0,totalRecCost=0,totalRecMrp=0;
+  deptTbl.innerHTML=DEPTS.map(dept=>{
+    const dOrds=data.filter(o=>(o.dept||'')===dept);
+    const dOrd=dOrds.reduce((a,o)=>a+o.orderedTotal,0);
+    const dRec=dOrds.reduce((a,o)=>a+o.receivedTotal,0);
+    const dPend=Math.max(0,dOrd-dRec);
+    const dCost=dOrds.reduce((a,o)=>a+(o.totalCost||o.orderedTotal*(o.avgCost||0)),0);
+    const dMrp =dOrds.reduce((a,o)=>a+(o.totalMrp ||o.orderedTotal*(o.avgMrp ||0)),0);
+    const dRecCost=dOrds.reduce((a,o)=>a+o.receivedTotal*(o.avgCost||0),0);
+    const dRecMrp =dOrds.reduce((a,o)=>a+o.receivedTotal*(o.avgMrp ||0),0);
+    totalOrd+=dOrd; totalRec+=dRec; totalCost+=dCost; totalMrp+=dMrp;
+    totalRecCost+=dRecCost; totalRecMrp+=dRecMrp;
+    return '<tr>'
+      +'<td style="font-weight:600;text-align:left;">'+dept+'</td>'
+      +'<td class="num">'+fmt(dOrd)+'</td>'
+      +'<td class="num">'+fmt(dRec)+'</td>'
+      +'<td class="num">'+fmt(dPend)+'</td>'
+      +'<td class="num">₹'+fmt(Math.round(dCost))+'</td>'
+      +'<td class="num">₹'+fmt(Math.round(dMrp))+'</td>'
+      +'<td class="num">₹'+fmt(Math.round(dRecCost))+'</td>'
+      +'<td class="num">₹'+fmt(Math.round(dRecMrp))+'</td>'
+      +'</tr>';
+  }).join('')
+  +'<tr class="total-row">'
+  +'<td style="text-align:left;">TOTAL</td>'
+  +'<td class="num">'+fmt(totalOrd)+'</td>'
+  +'<td class="num">'+fmt(totalRec)+'</td>'
+  +'<td class="num">'+fmt(Math.max(0,totalOrd-totalRec))+'</td>'
+  +'<td class="num">₹'+fmt(Math.round(totalCost))+'</td>'
+  +'<td class="num">₹'+fmt(Math.round(totalMrp))+'</td>'
+  +'<td class="num">₹'+fmt(Math.round(totalRecCost))+'</td>'
+  +'<td class="num">₹'+fmt(Math.round(totalRecMrp))+'</td>'
+  +'</tr>';
+
+  // Charts
+  const sm={};data.forEach(o=>{if(!sm[o.supplier])sm[o.supplier]={ord:0,rec:0};sm[o.supplier].ord+=o.orderedTotal;sm[o.supplier].rec+=o.receivedTotal;});
+  const sl=Object.keys(sm);
+  const sr=sl.map(s=>sm[s].ord>0?sm[s].rec/sm[s].ord*100:0);
+  makeChart('chSup','bar',{labels:sl,datasets:[{label:'Recv%',data:sr,backgroundColor:'#0D7C66'},{label:'Pend%',data:sr.map(r=>100-r),backgroundColor:'#F5A623'}]},{scales:{x:{stacked:true},y:{stacked:true,max:100}},plugins:{legend:{position:'bottom'}}});
+  makeChart('chStatus','doughnut',{labels:['Completed','Partial','Pending'],datasets:[{data:[comp,part,pend],backgroundColor:['#1E8449','#F5A623','#C0392B'],borderWidth:2}]},{plugins:{legend:{position:'bottom'}}});
+  const mm={};data.forEach(o=>{if(!o.orderDate)return;const m=o.orderDate.slice(0,7);if(!mm[m])mm[m]={ord:0,rec:0};mm[m].ord+=o.orderedTotal;mm[m].rec+=o.receivedTotal;});
+  const ml=Object.keys(mm).sort();
+  makeChart('chTrend','line',{labels:ml,datasets:[{label:'Ordered',data:ml.map(m=>mm[m].ord),borderColor:'#2980B9',backgroundColor:'rgba(41,128,185,.1)',fill:true,tension:.4},{label:'Received',data:ml.map(m=>mm[m].rec),borderColor:'#0D7C66',backgroundColor:'rgba(13,124,102,.1)',fill:true,tension:.4}]},{plugins:{legend:{position:'bottom'}}});
+  const dp=data.map(o=>{return{d:o.designNo,p:Math.max(0,o.orderedTotal-o.receivedTotal)};}).filter(x=>x.p>0).sort((a,b)=>b.p-a.p).slice(0,10);
+  renderDesignTable();
+  makeChart('chTop10','bar',{labels:dp.map(x=>x.d),datasets:[{label:'Pending',data:dp.map(x=>x.p),backgroundColor:'#C0392B'}]},{indexAxis:'y',plugins:{legend:{display:false}}});
+}
+function makeChart(id,type,data,opts={}) {
+  const c=v(id);if(!c)return;
+  if(charts[id])charts[id].destroy();
+  charts[id]=new Chart(c,{type,data,options:{responsive:true,maintainAspectRatio:false,...opts}});
+}
+
+
+function downloadSampleFormat() {
+  const rows = [
+    'SUPPLIER,ORDER DATE,EXP DATE,ITEM NAME,DESI NUM,DEP,LOOK NAME,COLOUR,SIZE,QTY,AVG COST,AVG MRP',
+    'AMBIKA ENTERPRISES,2026-06-22,2026-07-15,FROCK GIRLS,901,Girls,Casual,RED,S/NB,24,820,1995',
+    ',,,,,,,,M/10,18,,',
+    ',,,,,,,,L/12,18,,',
+    ',,,,,,,BLUE,S/NB,12,,',
+    ',,,,,,,,M/10,15,,',
+    'AMBIKA ENTERPRISES,2026-06-22,2026-07-15,BOYS SHIRT,902,Boys,Formal,RED,S/NB,30,650,1650',
+    ',,,,,,,,M/10,24,,',
+    ',,,,,,,GREEN,S/NB,20,,',
+    ',,,,,,,,M/10,16,,',
+  ];
+  const csv = rows.join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'KT_Sample_Format.csv';
+  a.style.display = 'none';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(a.href);},500);
+  toast('Sample CSV downloaded! Fill in Excel, Save As CSV, then Import');
+}
+
+async function importExcelFile(event) {
+  const file=event.target.files[0]; if(!file) return;
+  const isXlsx = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+  
+  if(isXlsx && typeof XLSX !== 'undefined') {
+    // Use SheetJS for xlsx
+    const buf = await file.arrayBuffer();
+    const wb  = XLSX.read(buf, {type:'array', cellDates:true});
+    const ws  = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    await processExcelRows(raw);
+  } else {
+    // CSV/TSV text import
+    const text = await new Promise((res,rej)=>{
+      const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsText(file);
+    });
+    const isCSV = file.name.endsWith('.csv') || (text.indexOf(',') > -1 && text.indexOf('\t') < 0);
+    const sep = isCSV ? ',' : '\t';
+    const rows = text.split('\n').map(r=>r.split(sep).map(c=>(c||'').trim().replace(/^"|"$/g,'')));
+    await processImportRows(rows);
+  }
+  event.target.value='';
+}
+
+async function processExcelRows(raw) {
+  if(!raw.length){ toast('Empty file',true); return; }
+
+  const hdrs = raw[0].map(h=>(h||'').toString().toUpperCase().trim());
+  const gc   = n => hdrs.findIndex(h=>h.includes(n));
+
+  const supCol  = gc('SUPPLIER');
+  const odtCol  = gc('ORDER DATE');
+  const edtCol  = gc('EXP DATE');
+  const itemCol = gc('ITEM NAME');
+  const desCol  = gc('DESI NUM');
+  const depCol  = gc('DEP');
+  const lkCol   = gc('LOOK NAME');
+  const clrCol  = gc('COLOUR');
+  const costCol = gc('AVE COST');
+  const mrpCol  = gc('AVE MRP');
+
+  // Size columns
+  const sizeMap = {
+    '0M':'0M','0M-3M':'0M_3M','3M-6M':'3M_6M','6M-9M':'6M_9M',
+    '9-12M':'9_12M','1-2Y':'1_2Y','2-3Y':'2_3Y','3-4Y':'3_4Y',
+    '4-5Y':'4_5Y','5-6Y':'5_6Y','6-7Y':'6_7Y','7-8Y':'7_8Y',
+    '8-9Y':'8_9Y','9-10Y':'9_10Y','11-12Y':'11_12Y','13-14Y':'13_14Y'
+  };
+  const sizeCols = {};
+  Object.keys(sizeMap).forEach(s=>{ const i=gc(s); if(i>=0) sizeCols[sizeMap[s]]=i; });
+
+  // Group by supplier+date+design
+  const designs = {};
+  let cSup='', cOdt='', cEdt='', cItem='', cDes='', cDep='', cLk='';
+
+  for(let i=1; i<raw.length; i++){
+    const row = raw[i];
+    if(!row.some(c=>c!==null&&c!==undefined&&c!=='')) continue;
+
+    // Fill down
+    if(row[supCol])  cSup  = row[supCol].toString().trim().toUpperCase();
+    if(row[odtCol]) {
+      const d = row[odtCol];
+      if(d instanceof Date) cOdt = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      else cOdt = d.toString().trim();
+    }
+    if(row[edtCol]) {
+      const d = row[edtCol];
+      if(d instanceof Date) cEdt = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      else {
+        // Handle "1.8.2026" format
+        const parts = d.toString().trim().split('.');
+        if(parts.length===3) cEdt = parts[2]+'-'+parts[1].padStart(2,'0')+'-'+parts[0].padStart(2,'0');
+        else cEdt = d.toString().trim();
+      }
+    }
+    if(row[itemCol]) cItem = row[itemCol].toString().trim().toUpperCase();
+    if(row[desCol])  cDes  = row[desCol].toString().trim();
+    if(depCol>=0 && row[depCol])  cDep = row[depCol].toString().trim();
+    if(lkCol>=0  && row[lkCol])   cLk  = row[lkCol].toString().trim().toUpperCase();
+
+    if(!cDes || !cSup) continue;
+
+    const key = cSup+'||'+cOdt+'||'+cDes;
+    if(!designs[key]) {
+      const cost = costCol>=0 ? parseFloat(row[costCol])||0 : 0;
+      const mrp  = mrpCol>=0  ? parseFloat(row[mrpCol])||0  : 0;
+      designs[key] = {
+        des:cDes, item:cItem, dept:cDep, lookname:cLk,
+        supplier:cSup, orderDate:cOdt, expectedDate:cEdt,
+        cost, mrp, colours:{}
+      };
+    }
+
+    // Get colour
+    const clr = clrCol>=0 ? (row[clrCol]||'').toString().trim().toUpperCase() : '';
+    if(clr && !designs[key].colours[clr]) designs[key].colours[clr] = {};
+
+    // Get sizes
+    if(clr) {
+      Object.entries(sizeCols).forEach(([k, ci])=>{
+        const val = parseFloat(row[ci])||0;
+        if(val) designs[key].colours[clr][k] = (designs[key].colours[clr][k]||0)+val;
+      });
+    }
+
+    // Update cost/mrp if found in this row
+    if(costCol>=0 && row[costCol] && !designs[key].cost) designs[key].cost = parseFloat(row[costCol])||0;
+    if(mrpCol>=0  && row[mrpCol]  && !designs[key].mrp)  designs[key].mrp  = parseFloat(row[mrpCol])||0;
+  }
+
+  // Fill form
+  v('drContainer').innerHTML=''; imgs={}; drCount=0;
+
+  // Get supplier & dates from first design
+  const firstDes = Object.values(designs)[0];
+  if(!firstDes){ toast('No valid data found',true); return; }
+
+  const sup = firstDes.supplier;
+  if(sup && !suppliers.includes(sup)){
+    suppliers.push(sup); buildSupDDs();
+    try{ await apiPost({action:'addSupplier',name:sup}); }catch(e){}
+  }
+  v('o_sup').value = sup||'';
+  v('o_date').value = firstDes.orderDate||'';
+  v('o_exp').value  = firstDes.expectedDate||'';
+
+  Object.values(designs).forEach(d=>{
+    addDR(); const rid=drCount;
+    v('dr_'+rid+'_des').value = d.des;
+    v('dr_'+rid+'_item').value = d.item;
+    const de=v('dr_'+rid+'_dept'); if(de) de.value=d.dept||'';
+    const le=v('dr_'+rid+'_lookname'); if(le) le.value=d.lookname||'';
+    const ce=v('dr_'+rid+'_cost'); if(ce&&d.cost) ce.value=d.cost;
+    const me=v('dr_'+rid+'_mrp');  if(me&&d.mrp)  me.value=d.mrp;
+    updateDRLbl(rid);
+
+    // Fill colours
+    const cc=v('dr_'+rid+'_clrs'); if(cc) cc.innerHTML='';
+    Object.entries(d.colours).forEach(([nm,sz])=>{
+      addClr(rid); const ci=v('dr_'+rid+'_clrs').children.length;
+      const ne=v('dc_'+rid+'_'+ci+'_name'); if(ne) ne.value=nm;
+      KEYS.forEach(k=>{ if(sz[k]){const el=v('dc_'+rid+'_'+ci+'_'+k);if(el)el.value=sz[k];} });
+      calcClrTot(rid,ci);
+    });
+    calcDRTot(rid);
+  });
+
+  updateSum();
+  const cnt=Object.keys(designs).length;
+  toast('Imported '+cnt+' design'+(cnt>1?'s':'')+' from Excel!');
+}
+
+async function processImportRows(rows) {
+  if(!rows.length){ toast('Empty file',true); return; }
+
+  // Find header row
+  const hi = rows.findIndex(r=>r.some(c=>(c||'').toUpperCase().includes('DESI')||
+                                        (c||'').toUpperCase().includes('ITEM')));
+  if(hi<0){ toast('Cannot find header row',true); return; }
+
+  const hdrs = rows[hi].map(h=>(h||'').toUpperCase());
+  const gc = n => hdrs.findIndex(h=>h.includes(n));
+
+  const supCol  = gc('SUPPLIER');
+  const odtCol  = gc('ORDER DATE') >= 0 ? gc('ORDER DATE') : gc('ORDER D');
+  const edtCol  = gc('EXP');
+  const itemCol = gc('ITEM');
+  const desCol  = gc('DESI');
+  const depCol  = gc('DEP');
+  const clrCol  = gc('COLOUR');
+  const sizeCol = gc('SIZE');
+  const qtyCol  = gc('QTY');
+  const costCol    = gc('COST');
+  const mrpCol     = gc('MRP');
+  const looknameCol = gc('LOOK');
+
+  if(desCol<0||itemCol<0){ toast('Need DESI NUM and ITEM NAME columns',true); return; }
+
+  // Parse rows - fill down logic
+  const designs = {};
+  let cSup='', cOdt='', cEdt='', cItem='', cDes='', cDep='', cClr='', cCost='', cMrp='', cLookname='';
+
+  for(let i=hi+1; i<rows.length; i++){
+    const row = rows[i];
+    if(!row.some(c=>c)) continue;
+
+    if(supCol>=0  && row[supCol])  cSup  = row[supCol];
+    if(odtCol>=0  && row[odtCol])  cOdt  = row[odtCol];
+    if(edtCol>=0  && row[edtCol])  cEdt  = row[edtCol];
+    if(itemCol>=0 && row[itemCol]) cItem = row[itemCol];
+    if(desCol>=0  && row[desCol])  cDes  = row[desCol];
+    if(depCol>=0  && row[depCol])  cDep  = row[depCol];
+    if(clrCol>=0  && row[clrCol])  cClr  = row[clrCol];
+    if(costCol>=0    && row[costCol])    cCost     = row[costCol];
+    if(mrpCol>=0     && row[mrpCol])     cMrp      = row[mrpCol];
+    if(looknameCol>=0 && row[looknameCol]) cLookname = row[looknameCol];
+
+    if(!cDes) continue;
+
+    const key = cDes;
+    if(!designs[key]) {
+      designs[key] = {
+        des:cDes, item:cItem, dept:cDep, cost:cCost, mrp:cMrp, lookname:cLookname,
+        supplier:cSup, orderDate:cOdt, expectedDate:cEdt,
+        colours:{}
+      };
+    }
+    // Update fields if filled
+    if(cItem) designs[key].item = cItem;
+    if(cDep)  designs[key].dept = cDep;
+    if(cCost)     designs[key].cost     = cCost;
+    if(cMrp)      designs[key].mrp      = cMrp;
+    if(cLookname) designs[key].lookname = cLookname;
+    if(cSup)  designs[key].supplier = cSup;
+    if(cOdt)  designs[key].orderDate = cOdt;
+    if(cEdt)  designs[key].expectedDate = cEdt;
+
+    if(cClr && !designs[key].colours[cClr]) designs[key].colours[cClr] = {};
+    if(cClr && sizeCol>=0 && qtyCol>=0) {
+      const k = matchSize(row[sizeCol]||'');
+      const q = parseInt(row[qtyCol])||0;
+      if(k && q) designs[key].colours[cClr][k] = q;
+    }
+  }
+
+  // Get supplier/date from first design
+  const firstDes = Object.values(designs)[0];
+  const supplier    = firstDes?.supplier || '';
+  const orderDate   = firstDes?.orderDate || '';
+  const expectedDate= firstDes?.expectedDate || '';
+
+  // Fill form
+  v('drContainer').innerHTML=''; imgs={}; drCount=0;
+
+  if(supplier) {
+    const su = supplier.toUpperCase();
+    if(!suppliers.includes(su)){
+      suppliers.push(su); buildSupDDs();
+      try{ await apiPost({action:'addSupplier',name:su}); }catch(e){}
+    }
+    v('o_sup').value = su;
+  }
+  if(orderDate)    v('o_date').value = orderDate;
+  if(expectedDate) v('o_exp').value  = expectedDate;
+
+  Object.values(designs).forEach(d=>{
+    addDR(); const rid=drCount;
+    v('dr_'+rid+'_des').value  = d.des;
+    v('dr_'+rid+'_item').value = d.item;
+    const de=v('dr_'+rid+'_dept'); if(de) de.value=d.dept||'';
+    const ce=v('dr_'+rid+'_cost'); if(ce&&d.cost) ce.value=d.cost;
+    const me=v('dr_'+rid+'_mrp');  if(me&&d.mrp)  me.value=d.mrp;
+    const le=v('dr_'+rid+'_lookname'); if(le&&d.lookname) le.value=d.lookname;
+    updateDRLbl(rid);
+    const cc=v('dr_'+rid+'_clrs'); if(cc) cc.innerHTML='';
+    Object.entries(d.colours).forEach(([nm,sz])=>{
+      addClr(rid); const ci=v('dr_'+rid+'_clrs').children.length;
+      const ne=v('dc_'+rid+'_'+ci+'_name'); if(ne) ne.value=nm;
+      KEYS.forEach(k=>{if(sz[k]){const el=v('dc_'+rid+'_'+ci+'_'+k);if(el)el.value=sz[k];}});
+      calcClrTot(rid,ci);
+    });
+    calcDRTot(rid);
+  });
+
+  updateSum();
+  const cnt=Object.keys(designs).length;
+  toast('Imported '+cnt+' design'+(cnt>1?'s':'')+' | Supplier: '+(supplier||'—'));
+}
+
+function matchSize(s){
+  const m={'S/NB':'0M','S':'0M','NB':'0M','0M':'0M','M/10':'0M_3M','M':'0M_3M','0M-3M':'0M_3M','L/12':'3M_6M','L':'3M_6M','3M-6M':'3M_6M','XL/14':'6M_9M','XL':'6M_9M','6M-9M':'6M_9M','4/16':'9_12M','9-12M':'9_12M','6/18':'1_2Y','1-2Y':'1_2Y','8/20':'2_3Y','2-3Y':'2_3Y','10/22':'3_4Y','3-4Y':'3_4Y','12/24':'4_5Y','4-5Y':'4_5Y','14/26':'5_6Y','5-6Y':'5_6Y','4/28':'6_7Y','6-7Y':'6_7Y','6/30':'7_8Y','7-8Y':'7_8Y','8/32':'8_9Y','8-9Y':'8_9Y','10/34':'9_10Y','9-10Y':'9_10Y','12/36':'11_12Y','11-12Y':'11_12Y','14/38':'13_14Y','13-14Y':'13_14Y'};
+  return m[(s||'').toUpperCase().trim()]||null;
+}
+
+// ── EXPORT / IMPORT ────────────────────────────────────────────
+function exportCSV() {
+  if(!orders.length){toast('No orders',true);return;}
+  const h=['#','Supplier','Design','Colour','Dept','Item','Avg Cost','Avg MRP','Total Cost','Total MRP','Order Date','Exp Date','Recv Date','Ordered','Received','Pending','Recv%','Status','Bill No'];
+  const r=orders.map((o,i)=>{
+    const pct=o.orderedTotal>0?o.receivedTotal/o.orderedTotal*100:0;
+    return [i+1,o.supplier,o.designNo,o.colour||'',o.dept||'',o.itemName,'₹'+(o.avgCost||0),'₹'+(o.avgMrp||0),'₹'+(o.totalCost||0),'₹'+(o.totalMrp||0),fmtD(o.orderDate),fmtD(o.expectedDate),fmtD(o.receiptDate),o.orderedTotal,o.receivedTotal,Math.max(0,o.orderedTotal-o.receivedTotal),pct.toFixed(1)+'%',o.status,o.billNo||''];
+  });
+  const csv='\uFEFF'+[h,...r].map(row=>row.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download='KT_Orders_'+new Date().toISOString().slice(0,10)+'.csv';a.style.display='none';
+  document.body.appendChild(a);a.click();setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(a.href);},500);
+  toast('✅ CSV exported!');
+}
+function exportJSON() {
+  const blob=new Blob([JSON.stringify({orders,suppliers,at:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='KT_Backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.style.display='none';document.body.appendChild(a);a.click();setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(a.href);},500);
+  toast('✅ Backup saved! ('+orders.length+' orders)');
+}
+function importJSON(event) {
+  const file=event.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.orders){toast('⚠ Invalid backup',true);return;}
+      if(!confirm('Load '+data.orders.length+' orders? Replaces current data.'))return;
+      orders=data.orders||[];suppliers=data.suppliers||suppliers;
+      buildSupDDs();buildDesDDs();updateBadge();
+      toast('✅ Loaded '+orders.length+' orders!');
+    }catch(err){toast('⚠ Import failed',true);}
+    event.target.value='';
+  };
+  reader.readAsText(file);
+}
+function embedDownload() {
+  let raw='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+  const tag='script';
+  const nb='<'+tag+' id="embeddedData">\nconst EB_ORDERS='+JSON.stringify(orders)+';\nconst EB_SUPPLIERS='+JSON.stringify(suppliers)+';\n</'+tag+'>';
+  const re=new RegExp('<'+tag+' id="embeddedData">[\\s\\S]*?</'+tag+'>');
+  raw=raw.replace(re,nb);
+  const blob=new Blob([raw],{type:'text/html;charset=utf-8;'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='KT_OrderTracking_'+new Date().toISOString().slice(0,10)+'.html';a.style.display='none';
+  document.body.appendChild(a);a.click();setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(a.href);},500);
+  toast('✅ Downloaded with data!');
+}
+
+// ── TABS ───────────────────────────────────────────────────────
+function goTab(n) {
+  for(let i=0;i<6;i++){
+    const p=v('p'+i); if(p) p.className='panel'+(i===n?' on':'');
+    const t=v('t'+i); if(t) t.className='tab'+(i===n?' on':'');
+  }
+  if(n===2){ renderDash(); renderDesignTable(); }
+  if(n===3) renderAllOrders();
+  if(n===4) renderSupplierTab();
+  if(n===5){ renderSettingsSupList(); renderSettingsItemList(); }
+}
+
+// ── BADGE ──────────────────────────────────────────────────────
+function updateBadge() { v('totalBadge').textContent=orders.length+' Order'+(orders.length!==1?'s':''); }
+
+
+// ── SETTINGS ──────────────────────────────────────────────────────────────
+
+
+function saveItemDeptMap() {
+  localStorage.setItem('kt_item_dept_map', JSON.stringify(itemDeptMap));
+  // Also save to Google Sheets
+  apiPost({action:'saveItemMappings', mappings:itemDeptMap}).catch(e=>{});
+}
+
+// ── Supplier functions ─────────────────────────────────────────────────────
+async function addSupFromSettings() {
+  const name = v('set_sup')?.value.trim().toUpperCase();
+  if(!name){ toast('Enter supplier name',true); return; }
+  if(suppliers.includes(name)){ toast('Already exists',true); return; }
+  suppliers.push(name);
+  try{ await apiPost({action:'addSupplier',name}); }catch(e){}
+  buildSupDDs(); renderSettingsSupList();
+  if(v('set_sup')) v('set_sup').value='';
+  toast('Added: '+name);
+}
+
+async function importSupplierCSV(event) {
+  const file=event.target.files[0]; if(!file) return;
+  const text=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(file);});
+  const sep = text.indexOf('\t') > -1 ? '\t' : ',';
+  const rows=text.split('\n').map(r=>r.split(sep)[0].trim().replace(/^"|"$/g,''));
+  const names=rows.filter((r,i)=>i>0&&r&&!r.toUpperCase().includes('SUPPLIER')).map(r=>r.toUpperCase());
+  let added=0;
+  for(const name of names){
+    if(name && !suppliers.includes(name)){
+      suppliers.push(name);
+      try{await apiPost({action:'addSupplier',name});}catch(e){}
+      added++;
+    }
+  }
+  buildSupDDs(); renderSettingsSupList();
+  toast('Added '+added+' supplier'+(added>1?'s':'')+'!');
+  event.target.value='';
+}
+
+function downloadSupplierSample() {
+  const csv='SUPPLIER NAME\nAMBIKA ENTERPRISES\nVIJAY TRADERS\nPS MARKETING\nVEETEX\nLALA HOUSE';
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='KT_Suppliers_Sample.csv'; a.style.display='none';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(a.href);},500);
+  toast('Supplier sample downloaded!');
+}
+
+// ── Item Mapping functions ─────────────────────────────────────────────────
+function addItemMap() {
+  const item=v('set_item')?.value.trim().toUpperCase();
+  const dept=v('set_dept')?.value;
+  if(!item||!dept){toast('Enter item name and dept',true);return;}
+  itemDeptMap[item]=dept;
+  saveItemDeptMap(); renderSettingsItemList(); buildItemDropdowns();
+  if(v('set_item')) v('set_item').value='';
+  if(v('set_dept')) v('set_dept').value='';
+  toast('Mapping added: '+item+' → '+dept);
+}
+
+async function importItemCSV(event) {
+  const file=event.target.files[0]; if(!file) return;
+  const text=await new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(file);});
+  // Auto-detect CSV or TSV
+  const sep = text.indexOf('\t') > -1 ? '\t' : ',';
+  const rows=text.split('\n').map(r=>r.split(sep).map(c=>c.trim().replace(/^"|"$/g,'')));
+  let added=0;
+  rows.forEach((row,i)=>{
+    if(i===0) return; // skip header
+    const item=(row[0]||'').toUpperCase().trim();
+    const dept=(row[1]||'').trim();
+    if(item&&dept){itemDeptMap[item]=dept;added++;}
+  });
+  saveItemDeptMap(); renderSettingsItemList(); buildItemDropdowns();
+  toast('Added '+added+' mapping'+(added>1?'s':'')+'!');
+  event.target.value='';
+}
+
+function downloadItemSample() {
+  const csv='ITEM NAME,DEPT\nFROCK GIRLS,Girls\nBOYS SHIRT,Boys\nGIRLS TOP,Girls\nCOMBO SET,Boys & Girls\nBOYS SHORTS,Boys\nGIRLS FROCK,Girls';
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='KT_Items_Sample.csv'; a.style.display='none';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(a.href);},500);
+  toast('Item sample downloaded!');
+}
+
+function deleteItemMap(item) {
+  delete itemDeptMap[item];
+  saveItemDeptMap(); renderSettingsItemList();
+}
+
+// ── Render lists ───────────────────────────────────────────────────────────
+function renderSettingsSupList() {
+  const el=v('set_supList'); if(!el) return;
+  const cnt=v('sup_count'); if(cnt) cnt.textContent=suppliers.length;
+  el.innerHTML='';
+  suppliers.forEach((s,i)=>{
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:1px solid #EEF1F6;background:'+(i%2?'#F8FAFC':'#fff')+';font-size:12px;';
+    const sp=document.createElement('span'); sp.textContent=s;
+    const btn=document.createElement('button'); btn.textContent='✕';
+    btn.style.cssText='border:none;background:none;color:var(--red);cursor:pointer;';
+    btn.addEventListener('click',()=>delSup(s));
+    d.appendChild(sp); d.appendChild(btn); el.appendChild(d);
+  });
+}
+
+function renderSettingsItemList() {
+  const el=v('set_itemList'); if(!el) return;
+  const entries=Object.entries(itemDeptMap);
+  const cnt=v('item_count'); if(cnt) cnt.textContent=entries.length;
+  if(!entries.length){el.innerHTML='<div style="padding:12px;color:var(--muted);font-size:12px;">No mappings yet. Import CSV or add manually.</div>';return;}
+  el.innerHTML='';
+  entries.forEach(([item,dept],i)=>{
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:1px solid #EEF1F6;background:'+(i%2?'#F8FAFC':'#fff')+';font-size:12px;';
+    const sp=document.createElement('span');
+    sp.innerHTML='<strong>'+item+'</strong> <span style="color:var(--teal);margin-left:8px;">&#8594; '+dept+'</span>';
+    const btn=document.createElement('button'); btn.textContent='✕';
+    btn.style.cssText='border:none;background:none;color:var(--red);cursor:pointer;';
+    btn.addEventListener('click',(function(it){return function(){deleteItemMap(it);};})(item));
+    d.appendChild(sp); d.appendChild(btn); el.appendChild(d);
+  });
+}
+
+// Auto-fill dept when item name typed in order entry
+function autoFillDept(drId) {
+  const sel = v('dr_'+drId+'_item');
+  const txt2 = v('dr_'+drId+'_item_txt');
+  const item = (sel?.value||txt2?.value||'').trim().toUpperCase();
+  if(!item) return;
+  const dept = itemDeptMap[item];
+  if(dept) {
+    const de = v('dr_'+drId+'_dept');
+    if(!de) return;
+    // Match case-insensitively with dropdown options
+    const opts = Array.from(de.options);
+    const match = opts.find(o => o.value.toUpperCase() === dept.toUpperCase());
+    if(match) de.value = match.value;
+  }
+}
+
+
+
+function buildItemDropdowns() {
+  const items = Object.keys(itemDeptMap);
+  if(!items.length) return;
+  document.querySelectorAll('select[id$="_item"]').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">-- Select --</option>' +
+      items.map(it=>'<option value="'+it+'"'+(it===cur?' selected':'')+'>'+it+'</option>').join('');
+    if(cur) sel.value = cur;
+  });
+}
+
+
+// ── FOLLOW-UP REMINDERS ────────────────────────────────────────────────────
+function checkFollowups() {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const alerts = [];
+
+  // Group by supplier + orderDate
+  const groups = {};
+  orders.forEach(o => {
+    if(o.status === 'Completed') return; // skip completed
+    const key = o.supplier + '||' + o.orderDate;
+    if(!groups[key]) groups[key] = {supplier:o.supplier, orderDate:o.orderDate, expectedDate:o.expectedDate, designs:[]};
+    groups[key].designs.push(o);
+  });
+
+  Object.values(groups).forEach(g => {
+    if(!g.expectedDate) return;
+    const expDate = new Date(g.expectedDate);
+    expDate.setHours(0,0,0,0);
+    const daysLeft = Math.round((expDate - today) / 86400000);
+
+    let level = null;
+    let icon = '';
+    let color = '';
+    let msg = '';
+
+    if(daysLeft < 0) {
+      level = 'overdue';
+      icon = '⚫';
+      color = '#1A1A1A';
+      msg = Math.abs(daysLeft)+' days OVERDUE!';
+    } else if(daysLeft <= 7) {
+      level = 'urgent';
+      icon = '🔴';
+      color = '#C0392B';
+      msg = daysLeft === 0 ? 'DUE TODAY!' : daysLeft+' days left — URGENT!';
+    } else if(daysLeft <= 15) {
+      level = 'soon';
+      icon = '🟠';
+      color = '#E67E22';
+      msg = daysLeft+' days left — Call now!';
+    } else if(daysLeft <= 30) {
+      level = 'upcoming';
+      icon = '🟡';
+      color = '#F5A623';
+      msg = daysLeft+' days left — Plan ahead';
+    }
+
+    if(level) {
+      alerts.push({
+        supplier: g.supplier,
+        orderDate: g.orderDate,
+        expectedDate: g.expectedDate,
+        designs: g.designs.length,
+        daysLeft, level, icon, color, msg
+      });
+    }
+  });
+
+  // Sort by daysLeft (most urgent first)
+  alerts.sort((a,b) => a.daysLeft - b.daysLeft);
+
+  // Update bell
+  const bell = v('followupBell');
+  const cnt  = v('followupCount');
+  if(bell) bell.style.display = alerts.length ? 'flex' : 'none';
+  if(cnt)  cnt.textContent = alerts.length;
+
+  return alerts;
+}
+
+function showFollowup() {
+  const alerts = checkFollowups();
+  if(!alerts.length) { toast('No pending follow-ups! ✅'); return; }
+
+  const list = v('followupList');
+  list.innerHTML = '';
+
+  if(!alerts.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);">✅ No follow-ups needed!</div>';
+  } else {
+    alerts.forEach(a => {
+      const div = document.createElement('div');
+      div.style.cssText = 'border-left:4px solid '+a.color+';background:'+a.color+'11;border-radius:8px;padding:12px 14px;margin-bottom:10px;';
+      div.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:center;">'
+        +'<div>'
+        +'<span style="font-size:16px;">'+a.icon+'</span> '
+        +'<strong style="font-size:13px;color:var(--navy);">'+a.supplier+'</strong>'
+        +'<span style="margin-left:8px;font-size:11px;background:'+a.color+';color:#fff;padding:2px 8px;border-radius:12px;font-weight:700;">'+a.msg+'</span>'
+        +'</div>'
+        +'<div style="text-align:right;font-size:11px;color:var(--muted);">'
+        +a.designs+' design'+(a.designs>1?'s':'')+'<br>'
+        +'Exp: '+fmtD(a.expectedDate)
+        +'</div>'
+        +'</div>';
+      list.appendChild(div);
+    });
+  }
+
+  v('followupModal').style.display = 'flex';
+}
+
+function closeFollowup() {
+  v('followupModal').style.display = 'none';
+}
+
+function muteFollowup(muted) {
+  if(muted) {
+    const today = new Date().toDateString();
+    localStorage.setItem('kt_followup_mute', today);
+  } else {
+    localStorage.removeItem('kt_followup_mute');
+  }
+}
+
+function autoShowFollowup() {
+  const muteDate = localStorage.getItem('kt_followup_mute');
+  const today = new Date().toDateString();
+  if(muteDate === today) return; // muted today
+  const alerts = checkFollowups();
+  if(alerts.length > 0) {
+    setTimeout(() => showFollowup(), 1500); // show after 1.5s
+  }
+}
+
+
+// ── DIRECT EXCEL IMPORT → GOOGLE SHEETS ──────────────────────────────────
+async function directImportExcel(event) {
+  const file = event.target.files[0]; if(!file) return;
+  if(typeof XLSX === 'undefined'){ toast('SheetJS not loaded',true); return; }
+
+  loading(true);
+  toast('Reading Excel...');
+
+  const buf = await file.arrayBuffer();
+  const wb  = XLSX.read(buf, {type:'array', cellDates:true});
+  const ws  = wb.Sheets[wb.SheetNames[0]];
+  const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+
+  if(!raw.length){ loading(false); toast('Empty file',true); return; }
+
+  const hdrs = raw[0].map(h=>(h||'').toString().toUpperCase().trim());
+  const gc   = n => hdrs.findIndex(h=>h.includes(n));
+
+  const supCol  = gc('SUPPLIER');
+  const odtCol  = gc('ORDER DATE');
+  const edtCol  = gc('EXP DATE');
+  const itemCol = gc('ITEM NAME');
+  const desCol  = gc('DESI NUM');
+  const depCol  = gc('DEP');
+  const lkCol   = gc('LOOK NAME');
+  const clrCol  = gc('COLOUR');
+  const costCol = gc('AVE COST');
+  const mrpCol  = gc('AVE MRP');
+
+  const sizeMap = {
+    '0M':'0M','0M-3M':'0M_3M','3M-6M':'3M_6M','6M-9M':'6M_9M',
+    '9-12M':'9_12M','1-2Y':'1_2Y','2-3Y':'2_3Y','3-4Y':'3_4Y',
+    '4-5Y':'4_5Y','5-6Y':'5_6Y','6-7Y':'6_7Y','7-8Y':'7_8Y',
+    '8-9Y':'8_9Y','9-10Y':'9_10Y','11-12Y':'11_12Y','13-14Y':'13_14Y'
+  };
+  const sizeCols = {};
+  Object.keys(sizeMap).forEach(s=>{ const i=gc(s); if(i>=0) sizeCols[sizeMap[s]]=i; });
+
+  // Parse Excel rows
+  const designs = {};
+  let cSup='',cOdt='',cEdt='',cItem='',cDes='',cDep='',cLk='';
+
+  for(let i=1; i<raw.length; i++){
+    const row = raw[i];
+    if(!row.some(c=>c!==null&&c!==undefined&&c!=='')) continue;
+
+    if(row[supCol])  cSup  = row[supCol].toString().trim().toUpperCase();
+    if(row[odtCol]) {
+      const d=row[odtCol];
+      if(d instanceof Date) cOdt=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      else cOdt=d.toString().trim();
+    }
+    if(row[edtCol]) {
+      const d=row[edtCol];
+      if(d instanceof Date) cEdt=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      else {
+        const p=d.toString().trim().split('.');
+        if(p.length===3) cEdt=p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+        else cEdt=d.toString().trim();
+      }
+    }
+    if(row[itemCol]) cItem=row[itemCol].toString().trim().toUpperCase();
+    if(row[desCol])  cDes =row[desCol].toString().trim();
+    if(depCol>=0&&row[depCol])  cDep=row[depCol].toString().trim();
+    if(lkCol>=0 &&row[lkCol])   cLk =row[lkCol].toString().trim().toUpperCase();
+
+    if(!cDes||!cSup) continue;
+
+    const key=cSup+'||'+cOdt+'||'+cDes;
+    if(!designs[key]){
+      designs[key]={
+        des:cDes, item:cItem, dept:cDep, lookname:cLk,
+        supplier:cSup, orderDate:cOdt, expectedDate:cEdt,
+        cost:costCol>=0?parseFloat(row[costCol])||0:0,
+        mrp:mrpCol>=0?parseFloat(row[mrpCol])||0:0,
+        colours:{}
+      };
+    }
+    if(costCol>=0&&row[costCol]&&!designs[key].cost) designs[key].cost=parseFloat(row[costCol])||0;
+    if(mrpCol>=0&&row[mrpCol]&&!designs[key].mrp)   designs[key].mrp=parseFloat(row[mrpCol])||0;
+
+    const clr=clrCol>=0?(row[clrCol]||'').toString().trim().toUpperCase():'';
+    if(clr&&!designs[key].colours[clr]) designs[key].colours[clr]={};
+    if(clr){
+      Object.entries(sizeCols).forEach(([k,ci])=>{
+        const val=parseFloat(row[ci])||0;
+        if(val) designs[key].colours[clr][k]=(designs[key].colours[clr][k]||0)+val;
+      });
+    }
+  }
+
+  const designList = Object.values(designs);
+  if(!designList.length){ loading(false); toast('No valid data',true); return; }
+
+  // Add new suppliers
+  const newSups=[...new Set(designList.map(d=>d.supplier))];
+  for(const s of newSups){
+    if(!suppliers.includes(s)){
+      suppliers.push(s);
+      try{await apiPost({action:'addSupplier',name:s});}catch(e){}
+    }
+  }
+  buildSupDDs();
+
+  // Save directly to Google Sheets - skip duplicates
+  let saved=0, failed=0, skipped=0;
+  for(const d of designList){
+    // Check duplicate - same supplier + orderDate + designNo
+    const isDuplicate = orders.some(o=>
+      o.supplier===d.supplier &&
+      o.orderDate===d.orderDate &&
+      o.designNo.toString()===d.des.toString()
+    );
+    if(isDuplicate){ skipped++; continue; }
+
+    const clrList = Object.entries(d.colours).map(([nm,sz])=>({name:nm,sizes:sz,tot:KEYS.reduce((a,k)=>a+(sz[k]||0),0)}));
+    const sizes={}; KEYS.forEach(k=>sizes[k]=0);
+    clrList.forEach(c=>KEYS.forEach(k=>sizes[k]+=(c.sizes[k]||0)));
+    const tot=KEYS.reduce((a,k)=>a+sizes[k],0);
+    const emptyRec={}; KEYS.forEach(k=>emptyRec[k]=0);
+
+    const ord={
+      id:Date.now()+saved,
+      supplier:d.supplier, designNo:d.des, colour:'', dept:d.dept,
+      lookname:d.lookname, orderDate:d.orderDate, expectedDate:d.expectedDate,
+      itemName:d.item, image:'', avgCost:d.cost, avgMrp:d.mrp,
+      totalCost:Math.round(tot*d.cost*100)/100,
+      totalMrp:Math.round(tot*d.mrp*100)/100,
+      colours:clrList, orderedSizes:sizes, orderedTotal:tot,
+      receivedSizes:{...emptyRec}, receivedTotal:0,
+      billNo:'', billDate:'', receiptDate:'', status:'Pending'
+    };
+    try{
+      const res=await apiPost({action:'saveOrder',order:ord});
+      if(res.success){ord.id=res.id;orders.push(ord);saved++;}
+      else failed++;
+    }catch(e){failed++;}
+  }
+
+  await loadData();
+  loading(false);
+  updateBadge(); buildDesDDs();
+  toast('✅ Saved '+saved+' designs!'+(skipped?' ('+skipped+' duplicates skipped)':'')+(failed?' ('+failed+' failed)':''));
+  goTab(3);
+  event.target.value='';
+}
+
+
+function showDelayedOrders() {
+  const data = getFiltered();
+  const delayed = data.filter(o=>{
+    const d = days(o.expectedDate, o.receiptDate || new Date().toISOString().slice(0,10));
+    return d !== null && d > 7;
+  }).sort((a,b)=>{
+    const da = days(a.expectedDate, a.receiptDate || new Date().toISOString().slice(0,10));
+    const db = days(b.expectedDate, b.receiptDate || new Date().toISOString().slice(0,10));
+    return db - da;
+  });
+
+  if(!delayed.length){ toast('No delayed orders! ✅'); return; }
+
+  const tbody = v('delayedTbl');
+  tbody.innerHTML = '';
+  delayed.forEach((o,i)=>{
+    const today = new Date().toISOString().slice(0,10);
+    const recDate = o.receiptDate || today;
+    const d = days(o.expectedDate, recDate);
+    const isReceived = !!o.receiptDate;
+    const tr = document.createElement('tr');
+    tr.style.background = i%2===0?'#fff':'#FFF5F5';
+    tr.innerHTML =
+      '<td style="padding:9px 14px;font-weight:600;color:var(--navy);">'+o.supplier+'</td>'
+      +'<td style="padding:9px 14px;">'+o.designNo+'</td>'
+      +'<td style="padding:9px 14px;">'+o.itemName+'</td>'
+      +'<td style="padding:9px 14px;">'+fmtD(o.expectedDate)+'</td>'
+      +'<td style="padding:9px 14px;">'+(isReceived?fmtD(o.receiptDate):'<span style="color:var(--muted);">Not received</span>')+'</td>'
+      +'<td style="padding:9px 14px;text-align:center;"><span style="background:var(--red);color:#fff;border-radius:12px;padding:3px 10px;font-weight:700;">+'+d+' days</span></td>'
+      +'<td style="padding:9px 14px;text-align:center;">'+statusTag(o.orderedTotal>0?o.receivedTotal/o.orderedTotal*100:0)+'</td>';
+    tbody.appendChild(tr);
+  });
+
+  v('delayedModal').style.display = 'flex';
+}
+
+
+// ── SUPPLIER WISE TAB ─────────────────────────────────────────────────────
+function renderSupplierTab() {
+  const list = v('supOrderList'); if(!list) return;
+  list.innerHTML = '';
+
+  // Get unique suppliers with pending orders
+  const supMap = {};
+  orders.forEach(o=>{
+    if(!supMap[o.supplier]) supMap[o.supplier]={total:0,pending:0,designs:0};
+    supMap[o.supplier].designs++;
+    supMap[o.supplier].total += o.orderedTotal;
+    supMap[o.supplier].pending += Math.max(0, o.orderedTotal - o.receivedTotal);
+  });
+
+  Object.entries(supMap).forEach(([sup, info], i)=>{
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:10px 12px;border-bottom:1px solid #EEF1F6;cursor:pointer;border-radius:8px;margin-bottom:4px;background:'+(i%2?'#F8FAFC':'#fff');
+    div.innerHTML =
+      '<div style="font-weight:700;font-size:12px;color:var(--navy);">'+sup+'</div>'
+      +'<div style="font-size:11px;color:var(--muted);margin-top:3px;">'
+      +info.designs+' designs | Pending: <strong style="color:var(--red);">'+fmt(info.pending)+'</strong>'
+      +'</div>';
+    div.addEventListener('click', ()=>showSupplierDetail(sup));
+    div.addEventListener('mouseenter', ()=>div.style.background='var(--teal-lt)');
+    div.addEventListener('mouseleave', ()=>div.style.background=i%2?'#F8FAFC':'#fff');
+    list.appendChild(div);
+  });
+}
+
+function showSupplierDetail(sup) {
+  const title  = v('supDetailTitle');
+  const detail = v('supDetail');
+  if(!title||!detail) return;
+  title.textContent = '\ud83d\udcCB '+sup;
+
+  const supOrders = orders.filter(o=>o.supplier===sup);
+  if(!supOrders.length){
+    detail.innerHTML='<div style="text-align:center;color:var(--muted);padding:40px;">No orders found</div>';
+    return;
+  }
+
+  let html2 = '';
+
+  // Group by orderDate
+  const groups = {};
+  supOrders.forEach(o=>{
+    const k = o.orderDate;
+    if(!groups[k]) groups[k]={date:o.orderDate,expDate:o.expectedDate,designs:[]};
+    groups[k].designs.push(o);
+  });
+
+  Object.values(groups).forEach(g=>{
+    html2 += '<div style="margin-bottom:12px;">'
+      +'<div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;padding:4px 8px;background:#F0F3F8;border-radius:6px;">'
+      +'\ud83d\udcc5 Order Date: '+fmtD(g.date)+' | Exp: '+fmtD(g.expDate)
+      +'</div>';
+
+    g.designs.forEach(o=>{
+      const pct = o.orderedTotal>0?(o.receivedTotal/o.orderedTotal*100):0;
+      const pendQty = Math.max(0,o.orderedTotal-o.receivedTotal);
+      const colours = o.colours&&o.colours.length?o.colours:[{name:o.colour||'—',sizes:o.orderedSizes||{}}];
+      const clrList = colours.map(c=>'<span style="display:inline-block;background:#E6F4F1;color:var(--teal);border-radius:12px;padding:2px 8px;font-size:10px;font-weight:700;margin:2px;">'+(c.name||'—')+'</span>').join('');
+
+      html2 += '<div style="border:1.5px solid #EEF1F6;border-radius:10px;margin-bottom:8px;overflow:hidden;">'
+        +'<div onclick="toggleDesignSize(\''+o.designNo+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--navy);color:#fff;cursor:pointer;">'
+        +'<div>'
+        +'<span style="font-weight:700;font-size:13px;">'+o.designNo+'</span>'
+        +(o.itemName?' <span style="opacity:.8;font-size:11px;">'+o.itemName+'</span>':'')
+        +(o.lookname?' <span style="background:rgba(255,255,255,.2);border-radius:10px;padding:1px 7px;font-size:10px;">'+o.lookname+'</span>':'')
+        +'</div>'
+        +'<div style="display:flex;align-items:center;gap:10px;">'
+        +statusTag(pct)
+        +'<span style="font-size:11px;opacity:.8;">'+fmt(o.receivedTotal)+'/'+fmt(o.orderedTotal)+' | Pend: '+fmt(pendQty)+'</span>'
+        +'<span id="arr_'+o.designNo+'">▼</span>'
+        +'</div>'
+        +'</div>'
+        +'<div style="padding:8px 14px;background:#F8FAFC;border-bottom:1px solid #EEF1F6;">'
+        +'<span style="font-size:10px;font-weight:700;color:var(--muted);margin-right:6px;">COLOURS:</span>'
+        +clrList
+        +'</div>'
+        +'<div id="sizedet_'+o.designNo+'" style="display:none;overflow-x:auto;">'
+        +buildSizeTable(o)
+        +'</div>'
+        +'</div>';
+    });
+    html2 += '</div>';
+  });
+
+  detail.innerHTML = html2;
+}
+
+function toggleDesignSize(desNo) {
+  const el = v('sizedet_'+desNo);
+  const arr = v('arr_'+desNo);
+  if(!el) return;
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  if(arr) arr.textContent = isOpen ? '▼' : '▲';
+}
+
+function buildSizeTable(o) {
+  const colours = o.colours&&o.colours.length?o.colours:[{name:o.colour||'—',sizes:o.orderedSizes||{}}];
+  const recSizes = o.receivedSizes||{};
+  const sizeHdrs = KEYS.map((k,i)=>'<th style="background:var(--navy);color:#fff;padding:4px 3px;font-size:9px;text-align:center;min-width:38px;">'+LTOP[i]+'<br><span style="color:#8BA3C7">'+LBOT[i]+'</span></th>').join('');
+
+  let tbl = '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+    +'<thead><tr>'
+    +'<th style="background:var(--navy);color:#fff;padding:6px 10px;text-align:left;min-width:90px;">COLOUR</th>'
+    +'<th style="background:var(--navy);color:#fff;padding:6px 8px;min-width:40px;">ORD</th>'
+    +'<th style="background:var(--navy);color:#fff;padding:6px 8px;min-width:40px;">REC</th>'
+    +'<th style="background:var(--navy);color:#fff;padding:6px 8px;min-width:40px;">PEND</th>'
+    +sizeHdrs
+    +'</tr></thead><tbody>';
+
+  colours.forEach((c,ci)=>{
+    const clrOrd = KEYS.reduce((a,k)=>a+(c.sizes&&c.sizes[k]?c.sizes[k]:0),0);
+    const clrRec = KEYS.reduce((a,k)=>a+(recSizes[k]||0),0);
+    const clrPend= Math.max(0,clrOrd-clrRec);
+    tbl += '<tr style="background:'+(ci%2?'#F8FAFC':'#fff')+'">'
+      +'<td style="padding:5px 10px;font-weight:700;border:1px solid #EEF1F6;">'+(c.name||'—')+'</td>'
+      +'<td style="padding:5px;text-align:center;border:1px solid #EEF1F6;">'+clrOrd+'</td>'
+      +'<td style="padding:5px;text-align:center;border:1px solid #EEF1F6;color:var(--green);">'+clrRec+'</td>'
+      +'<td style="padding:5px;text-align:center;border:1px solid #EEF1F6;color:var(--red);font-weight:700;">'+clrPend+'</td>';
+    KEYS.forEach(k=>{
+      const ordQ = c.sizes&&c.sizes[k]?c.sizes[k]:0;
+      const recQ = recSizes[k]||0;
+      const pQ   = Math.max(0,ordQ-recQ);
+      tbl += '<td style="padding:3px 2px;text-align:center;border:1px solid #EEF1F6;font-size:10px;'+(pQ>0?'background:#FFF0F0;':'')+'"><b style="color:'+(pQ>0?'var(--red)':'#bbb')+';">'+(pQ||'0')+'</b></td>';
+    });
+    tbl += '</tr>';
+  });
+  tbl += '</tbody></table>';
+  return tbl;
+}
+
+
+function renderDesignTable() {
+  const tbody = v('desTbl'); if(!tbody) return;
+  const empty = v('desEmpty');
+  if(!tbody) return;
+  const search = (v('des_search')?.value||'').toLowerCase();
+  const filter = v('des_filter')?.value||'';
+  let data = [...orders];
+  if(filter) data = data.filter(o=>o.status===filter);
+  if(search) data = data.filter(o=>
+    (o.designNo||'').toString().toLowerCase().includes(search)||
+    (o.itemName||'').toLowerCase().includes(search)||
+    (o.lookname||'').toLowerCase().includes(search)||
+    (o.supplier||'').toLowerCase().includes(search)
+  );
+  if(!data.length){ tbody.innerHTML=''; if(empty) empty.style.display='block'; return; }
+  if(empty) empty.style.display='none';
+  tbody.innerHTML = data.map((o,i)=>{
+    const pct = o.orderedTotal>0?(o.receivedTotal/o.orderedTotal*100):0;
+    const pendQty = Math.max(0,o.orderedTotal-o.receivedTotal);
+    const pendPct = o.orderedTotal>0?((pendQty/o.orderedTotal)*100).toFixed(1):0;
+    const avgC = o.avgCost||0, avgM = o.avgMrp||0;
+    const totalCP  = Math.round(o.orderedTotal*avgC);
+    const recCP    = Math.round(o.receivedTotal*avgC);
+    const pendCP   = Math.round(pendQty*avgC);
+    const totalMRP = Math.round(o.orderedTotal*avgM);
+    const recMRP   = Math.round(o.receivedTotal*avgM);
+    const pendMRP  = Math.round(pendQty*avgM);
+    return '<tr>'
+      +'<td>'+(i+1)+'</td>'
+      +'<td style="font-weight:700;color:var(--teal);">'+o.designNo+'</td>'
+      +'<td>'+(o.itemName||'—')+'</td>'
+      +'<td>'+(o.lookname?'<span class="tag" style="background:#E6F4F1;color:var(--teal);font-size:10px;">'+o.lookname+'</span>':'—')+'</td>'
+      +'<td>'+(o.dept||'—')+'</td>'
+      +'<td class="num">'+fmt(o.orderedTotal)+'</td>'
+      +'<td class="num" style="color:var(--green);">'+fmt(o.receivedTotal)+'</td>'
+      +'<td class="num" style="color:var(--red);">'+fmt(pendQty)+'</td>'
+      +'<td class="num">'+(pendPct>0?'<span style="color:var(--red);">'+pendPct+'%</span>':'<span style="color:var(--green);">0%</span>')+'</td>'
+      +'<td class="num">&#8377;'+fmt(totalCP)+'</td>'
+      +'<td class="num" style="color:var(--green);">&#8377;'+fmt(recCP)+'</td>'
+      +'<td class="num" style="color:var(--red);">&#8377;'+fmt(pendCP)+'</td>'
+      +'<td class="num">&#8377;'+fmt(totalMRP)+'</td>'
+      +'<td class="num" style="color:var(--green);">&#8377;'+fmt(recMRP)+'</td>'
+      +'<td class="num" style="color:var(--red);">&#8377;'+fmt(pendMRP)+'</td>'
+      +'<td>'+statusTag(pct)+'</td>'
+      +'</tr>';
+  }).join('');
+}
+
+// ── INIT ───────────────────────────────────────────────────────
+(async()=>{
+  // Load embedded first
+  if(typeof EB_ORDERS!=='undefined'&&EB_ORDERS!==null) orders=EB_ORDERS;
+  if(typeof EB_SUPPLIERS!=='undefined'&&EB_SUPPLIERS!==null) suppliers=EB_SUPPLIERS;
+  // Build UI
+  buildSupDDs(); buildDesDDs(); updateBadge(); addDR(); buildItemDropdowns();
+  // Then load from Google Sheets (overrides embedded)
+  await loadData();
+  renderAllOrders();
+})();</script>
+
+<!-- SUPPLIER WISE -->
+<div class="panel" id="p4">
+  <div style="display:grid;grid-template-columns:280px 1fr;gap:16px;height:calc(100vh - 120px);">
+
+    <!-- Left: Supplier List -->
+    <div class="card" style="overflow-y:auto;">
+      <div class="card-hdr">&#128101; Suppliers with Orders</div>
+      <div id="supOrderList" style="padding:8px;"></div>
+    </div>
+
+    <!-- Right: Supplier Detail -->
+    <div class="card" style="overflow-y:auto;">
+      <div class="card-hdr" id="supDetailTitle">&#128203; Select a Supplier</div>
+      <div id="supDetail" style="padding:16px;">
+        <div style="text-align:center;color:var(--muted);padding:40px;">
+          &#128101; Click a supplier to see pending details
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- SETTINGS -->
+<div class="panel" id="p5">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+    <!-- Suppliers -->
+    <div class="card">
+      <div class="card-hdr" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>&#128722; Manage Suppliers</span>
+        <label style="background:var(--gold);color:var(--navy);padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">
+          &#128229; Import CSV
+          <input type="file" accept=".csv,.txt" onchange="importSupplierCSV(event)" style="display:none;">
+        </label>
+      </div>
+      <div class="card-body">
+        <div class="fld">
+          <label>Add Single Supplier</label>
+          <div style="display:flex;gap:6px;">
+            <input type="text" id="set_sup" placeholder="SUPPLIER NAME" style="flex:1;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')addSupFromSettings()">
+            <button onclick="addSupFromSettings()" class="btn btn-teal" style="padding:8px 16px;">+ Add</button>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:-8px;">
+          CSV format: One supplier name per row (header: SUPPLIER NAME)
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Current Suppliers (<span id="sup_count">0</span>)</div>
+          <div id="set_supList" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;"></div>
+        </div>
+        <button onclick="downloadSupplierSample()" style="border:1.5px solid var(--teal);background:var(--teal-lt);color:var(--teal);border-radius:8px;padding:5px 14px;cursor:pointer;font-size:11px;font-weight:700;margin-top:4px;">&#128196; Download Sample CSV</button>
+      </div>
+    </div>
+
+    <!-- Item Mappings -->
+    <div class="card">
+      <div class="card-hdr" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>&#128203; Item Name &#8594; Dept</span>
+        <label style="background:var(--gold);color:var(--navy);padding:4px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">
+          &#128229; Import CSV
+          <input type="file" accept=".csv,.txt" onchange="importItemCSV(event)" style="display:none;">
+        </label>
+      </div>
+      <div class="card-body">
+        <div class="fld">
+          <label>Add Single Mapping</label>
+          <div style="display:flex;gap:6px;align-items:flex-end;">
+            <input type="text" id="set_item" placeholder="ITEM NAME" style="flex:1;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+            <select id="set_dept" style="width:130px;padding:8px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;">
+              <option value="">-- Dept --</option>
+              <option>Boys</option>
+              <option>Girls</option>
+              <option>Boys & Girls</option>
+            </select>
+            <button onclick="addItemMap()" class="btn btn-teal" style="padding:8px 16px;">+ Add</button>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:-8px;">
+          CSV format: ITEM NAME,DEPT (header row required)
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Current Mappings (<span id="item_count">0</span>)</div>
+          <div id="set_itemList" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;"></div>
+        </div>
+        <button onclick="downloadItemSample()" style="border:1.5px solid var(--teal);background:var(--teal-lt);color:var(--teal);border-radius:8px;padding:5px 14px;cursor:pointer;font-size:11px;font-weight:700;margin-top:4px;">&#128196; Download Sample CSV</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOLLOW-UP REMINDER MODAL -->
+<div id="followupModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;width:560px;max-width:95vw;max-height:80vh;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+    <div style="background:var(--navy);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;font-weight:700;">&#128222; Supplier Follow-up Reminders</span>
+      <button onclick="closeFollowup()" style="border:none;background:rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:14px;">&#x2715; Close</button>
+    </div>
+    <div style="padding:16px;overflow-y:auto;max-height:60vh;" id="followupList"></div>
+    <div style="padding:12px 20px;border-top:1px solid #EEF1F6;display:flex;justify-content:space-between;align-items:center;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);cursor:pointer;">
+        <input type="checkbox" id="followupMute" onchange="muteFollowup(this.checked)"> Don't show today
+      </label>
+      <button onclick="closeFollowup()" class="btn btn-teal" style="padding:8px 20px;">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Follow-up Bell Button -->
+<div id="followupBell" onclick="showFollowup()" style="display:none;position:fixed;bottom:28px;right:28px;width:52px;height:52px;background:var(--red);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3);z-index:8000;font-size:22px;">
+  &#128222;
+  <span id="followupCount" style="position:absolute;top:-4px;right:-4px;background:var(--gold);color:var(--navy);border-radius:50%;width:20px;height:20px;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;">0</span>
+</div>
+
+<!-- DELAYED ORDERS MODAL -->
+<div id="delayedModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;width:750px;max-width:95vw;max-height:85vh;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+    <div style="background:var(--red);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:15px;font-weight:700;">&#9200; Delayed Orders</span>
+      <button onclick="document.getElementById('delayedModal').style.display='none'" style="border:none;background:rgba(255,255,255,.2);color:#fff;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:14px;">&#x2715; Close</button>
+    </div>
+    <div style="overflow-y:auto;max-height:70vh;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="background:var(--navy);color:#fff;">
+            <th style="padding:10px 14px;text-align:left;">SUPPLIER</th>
+            <th style="padding:10px 14px;text-align:left;">DESIGN</th>
+            <th style="padding:10px 14px;text-align:left;">ITEM</th>
+            <th style="padding:10px 14px;text-align:left;">EXP DATE</th>
+            <th style="padding:10px 14px;text-align:left;">RECV DATE</th>
+            <th style="padding:10px 14px;text-align:center;">DELAY DAYS</th>
+            <th style="padding:10px 14px;text-align:center;">STATUS</th>
+          </tr>
+        </thead>
+        <tbody id="delayedTbl"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body>
+</html>
